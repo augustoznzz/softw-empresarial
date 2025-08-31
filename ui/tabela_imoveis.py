@@ -12,14 +12,15 @@ from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QFont, QColor, QPalette
 
 from models.imovel import Imovel
+from models.database import DatabaseManager
 from services.calculo_service import CalculoService
 
 class TabelaImoveis(QWidget):
     imovel_selecionado = Signal(Imovel)
     
-    def __init__(self, db_manager):
+    def __init__(self):
         super().__init__()
-        self.db_manager = db_manager
+        self.db_manager = DatabaseManager()
         self.calculo_service = CalculoService()
         self.imoveis = []
         self.imoveis_filtrados = []
@@ -175,8 +176,12 @@ class TabelaImoveis(QWidget):
                 border-bottom: 1px solid #f1f3f4;
             }
             QTableWidget::item:selected {
-                background-color: #000000;
-                color: #ffffff;
+                background-color: #000000 !important;
+                color: #ffffff !important;
+            }
+            QTableWidget::item:selected:active {
+                background-color: #000000 !important;
+                color: #ffffff !important;
             }
             QTableWidget::item:hover {
                 background-color: #e3f2fd;
@@ -211,6 +216,10 @@ class TabelaImoveis(QWidget):
         self.tabela.setSelectionBehavior(QTableWidget.SelectRows)
         self.tabela.setSelectionMode(QTableWidget.SingleSelection)
         self.tabela.setSortingEnabled(True)
+        
+        # Configurar altura mínima para mostrar pelo menos 5 linhas
+        self.tabela.setMinimumHeight(200)  # Altura mínima para 5 linhas + cabeçalho
+        self.tabela.verticalHeader().setDefaultSectionSize(35)  # Altura de cada linha
         
         # Ajustar tamanhos das colunas
         header = self.tabela.horizontalHeader()
@@ -285,7 +294,7 @@ class TabelaImoveis(QWidget):
         
         for row, imovel in enumerate(self.imoveis_filtrados):
             # Calcular valores financeiros
-            calculos = self.calculo_service.calcular_imovel(imovel)
+            calculos = self.calculo_service.calcular_tudo(imovel)
             
             # ID
             self.tabela.setItem(row, 0, QTableWidgetItem(str(imovel.id)))
@@ -422,13 +431,13 @@ class TabelaImoveis(QWidget):
         
         # Filtro por ROI
         if 'roi_min' in filtros and filtros['roi_min'] > 0:
-            calculos = self.calculo_service.calcular_imovel(imovel)
+            calculos = self.calculo_service.calcular_tudo(imovel)
             if calculos['roi'] < filtros['roi_min']:
                 return False
         
         # Filtro por margem
         if 'margem_min' in filtros and filtros['margem_min'] > 0:
-            calculos = self.calculo_service.calcular_imovel(imovel)
+            calculos = self.calculo_service.calcular_tudo(imovel)
             if calculos['margem'] < filtros['margem_min']:
                 return False
         
@@ -460,11 +469,11 @@ class TabelaImoveis(QWidget):
         """Verifica se um imóvel pertence a uma região específica"""
         # Mapeamento de cidades para regiões em Santa Catarina
         regioes = {
-            "Norte": ["Joinville", "São Francisco do Sul", "Itapoá", "Araquari", "Garuva", "Itajaí", "Balneário Camboriú", "Navegantes", "Penha", "Piçarras", "Itapema", "Bombinhas", "Porto Belo", "Tijucas", "Biguaçu", "São José", "Palhoça", "Paulo Lopes", "Garopaba", "Imbituba", "Laguna", "Tubarão", "Criciúma", "Içara", "Urussanga", "Siderópolis", "Nova Veneza", "Forquilhinha", "Meleiro", "Morro da Fumaça", "Cocal do Sul", "Ermo", "Jaguaruna", "Pedras Grandes", "Treze de Maio", "São Ludgero", "Braço do Norte", "Grão Pará", "Orleans", "Lauro Müller", "Urubici", "Bom Jardim da Serra", "São Joaquim", "Bom Retiro", "Ponte Alta", "Urupema", "Lages", "Otacílio Costa", "Bocaina do Sul", "São José do Cerrito", "Ponte Alta do Norte", "Curitibanos", "Ponte Alta do Sul", "Brunópolis", "Campos Novos", "Abelardo Luz", "Coronel Martins", "Entre Rios", "Galvão", "Ipuaçu", "Jupiá", "Lacerdópolis", "Lajeado Grande", "Marema", "Ouro Verde", "Passos Maia", "Vargeão", "Xanxerê", "Xaxim", "Águas de Chapecó", "Águas Frias", "Bandeirante", "Barra Bonita", "Belmonte", "Bom Jesus do Oeste", "Caibi", "Campo Erê", "Caxambu do Sul", "Chapecó", "Cordilheira Alta", "Cunha Porã", "Cunhataí", "Flor do Sertão", "Formosa do Sul", "Guatambu", "Irati", "Jardinópolis", "Maravilha", "Modelo", "Nova Erechim", "Nova Itaberaba", "Palmitos", "Pinhalzinho", "Planalto Alegre", "Quilombo", "Riqueza", "Romelândia", "Saltinho", "Santa Terezinha do Progresso", "Santiago do Sul", "São Bernardino", "São Carlos", "São Lourenço do Oeste", "Saudades", "Serra Alta", "Sul Brasil", "Tigrinhos", "Tunápolis", "União do Oeste", "Vidal Ramos", "Videira", "Arroio Trinta", "Caçador", "Calmon", "Capinzal", "Catanduvas", "Erval Velho", "Fraiburgo", "Herval d'Oeste", "Ibiam", "Ibicaré", "Iomerê", "Jaborá", "Lacerdópolis", "Lebon Régis", "Lindóia do Sul", "Luzerna", "Macieira", "Matos Costa", "Ouro", "Pinheiro Preto", "Rio das Antas", "Salto Veloso", "Tangará", "Treze Tílias", "Vargem Bonita", "Videira", "Zortéa"],
+            "Norte": ["Joinville", "São Francisco do Sul", "Itapoá", "Araquari", "Garuva", "Itajaí", "Balneário Camboriú", "Navegantes", "Penha", "Piçarras", "Itapema", "Bombinhas", "Porto Belo", "Tijucas", "Biguaçu", "São José", "Palhoça", "Paulo Lopes", "Garopaba", "Imbituba", "Laguna", "Tubarão", "Criciúma", "Içara", "Urussanga", "Siderópolis", "Nova Veneza", "Forquilhinha", "Meleiro", "Morro da Fumaça", "Cocal do Sul", "Ermo", "Jaguaruna", "Pedras Grandes", "Treze de Maio", "São Ludgero", "Braço do Norte", "Grão Pará", "Orleans", "Lauro Müller", "Urubici", "Bom Jardim da Serra", "São Joaquim", "Bom Retiro", "Ponte Alta", "Urupema", "Lages", "Otacílio Costa", "Bocaina do Sul", "São José do Cerrito", "Ponte Alta do Norte", "Curitibanos", "Ponte Alta do Sul", "Brunópolis", "Campos Novos", "Abelardo Luz", "Coronel Martins", "Entre Rios", "Galvão", "Ipuaçu", "Jupiá", "Lacerdópolis", "Lajeado Grande", "Marema", "Ouro Verde", "Passos Maia", "Vargeão", "Xanxerê", "Xaxim", "Águas de Chapecó", "Águas Frias", "Bandeirante", "Barra Bonita", "Belmonte", "Bom Jesus do Oeste", "Caibi", "Campo Erê", "Caxambu do Sul", "Chapecó", "Cordilheira Alta", "Cunha Porã", "Cunhataí", "Flor do Sertão", "Formosa do Sul", "Guatambu", "Irati", "Jardinópolis", "Maravilha", "Modelo", "Nova Erechim", "Nova Itaberaba", "Palmitos", "Pinhalzinho", "Planalto Alegre", "Quilombo", "Riqueza", "Romelândia", "Saltinho", "Santa Terezinha do Progresso", "Santiago do Sul", "São Bernardino", "São Carlos", "São Lourenço do Oeste", "Saudades", "Serra Alta", "Sul Brasil", "Tigrinhos", "Tunápolis", "União do Oeste", "Vidal Ramos", "Videira", "Arroio Trinta", "Caçador", "Calmon", "Catanduvas", "Erval Velho", "Fraiburgo", "Herval d'Oeste", "Ibiam", "Ibicaré", "Iomerê", "Jaborá", "Lebon Régis", "Lindóia do Sul", "Luzerna", "Macieira", "Matos Costa", "Ouro", "Pinheiro Preto", "Rio das Antas", "Salto Veloso", "Tangará", "Treze Tílias", "Vargem Bonita", "Zortéa"],
             "Sul": ["Araranguá", "Balneário Arroio do Silva", "Balneário Gaivota", "Balneário Rincão", "Balneário Camboriú", "Bombinhas", "Botuverá", "Braço do Norte", "Brusque", "Camboriú", "Criciúma", "Ermo", "Forquilhinha", "Gaspar", "Guabiruba", "Içara", "Imbituba", "Itajaí", "Itapema", "Jaguaruna", "Laguna", "Meleiro", "Morro da Fumaça", "Navegantes", "Nova Veneza", "Orleans", "Palhoça", "Paulo Lopes", "Penha", "Piçarras", "Porto Belo", "Sangão", "São João Batista", "São José", "Siderópolis", "Tijucas", "Tubarão", "Urussanga"],
             "Leste": ["Balneário Camboriú", "Balneário Piçarras", "Bombinhas", "Camboriú", "Garopaba", "Imbituba", "Itajaí", "Itapema", "Laguna", "Navegantes", "Palhoça", "Paulo Lopes", "Penha", "Piçarras", "Porto Belo", "São José", "Tijucas"],
-            "Oeste": ["Abelardo Luz", "Águas de Chapecó", "Águas Frias", "Bandeirante", "Barra Bonita", "Belmonte", "Bom Jesus do Oeste", "Caibi", "Campo Erê", "Caxambu do Sul", "Chapecó", "Cordilheira Alta", "Cunha Porã", "Cunhataí", "Dionísio Cerqueira", "Entre Rios", "Flor do Sertão", "Formosa do Sul", "Galvão", "Guatambu", "Guaraciaba", "Guarujá do Sul", "Irati", "Iraceminha", "Itapiranga", "Jardinópolis", "Joaçaba", "Lacerdópolis", "Lajeado Grande", "Marema", "Maravilha", "Mondaí", "Modelo", "Nova Erechim", "Nova Itaberaba", "Nova Veneza", "Ouro Verde", "Palmitos", "Paraíso", "Passos Maia", "Peritiba", "Pinhalzinho", "Pinheiro Preto", "Planalto Alegre", "Quilombo", "Rio das Antas", "Riqueza", "Romelândia", "Saltinho", "Santa Terezinha do Progresso", "Santiago do Sul", "São Bernardino", "São Carlos", "São Domingos", "São João do Oeste", "São José do Cedro", "São Lourenço do Oeste", "São Miguel da Boa Vista", "São Miguel do Oeste", "Saudades", "Serra Alta", "Sul Brasil", "Tigrinhos", "Tunápolis", "União do Oeste", "Vidal Ramos", "Videira", "Xanxerê", "Xaxim", "Zortéa"],
-            "Central": ["Alfredo Wagner", "Anita Garibaldi", "Bom Jardim da Serra", "Bom Retiro", "Botuverá", "Braço do Norte", "Brunópolis", "Campos Novos", "Capinzal", "Catanduvas", "Celso Ramos", "Correia Pinto", "Curitibanos", "Erval Velho", "Fraiburgo", "Frei Rogério", "Herval d'Oeste", "Ibiam", "Ibicaré", "Iomerê", "Jaborá", "Lacerdópolis", "Lages", "Lebon Régis", "Lindóia do Sul", "Luzerna", "Macieira", "Matos Costa", "Monte Carlo", "Ouro", "Painel", "Palmeira", "Ponte Alta", "Ponte Alta do Norte", "Ponte Alta do Sul", "Rio Rufino", "Salto Veloso", "Santa Cecília", "São Joaquim", "São José do Cerrito", "Tangará", "Treze Tílias", "Urupema", "Vargem Bonita", "Videira", "Zortéa"]
+            "Oeste": ["Abelardo Luz", "Águas de Chapecó", "Águas Frias", "Bandeirante", "Barra Bonita", "Belmonte", "Bom Jesus do Oeste", "Caibi", "Campo Erê", "Caxambu do Sul", "Chapecó", "Cordilheira Alta", "Cunha Porã", "Cunhataí", "Dionísio Cerqueira", "Entre Rios", "Flor do Sertão", "Formosa do Sul", "Galvão", "Guatambu", "Guaraciaba", "Guarujá do Sul", "Irati", "Iraceminha", "Itapiranga", "Jardinópolis", "Joaçaba", "Lacerdópolis", "Lajeado Grande", "Marema", "Maravilha", "Mondaí", "Modelo", "Nova Erechim", "Nova Itaberaba", "Nova Veneza", "Ouro Verde", "Palmitos", "Paraíso", "Passos Maia", "Peritiba", "Pinhalzinho", "Pinheiro Preto", "Planalto Alegre", "Quilombo", "Rio das Antas", "Riqueza", "Romelândia", "Saltinho", "Santa Terezinha do Progresso", "Santiago do Sul", "São Bernardino", "São Carlos", "São Domingos", "São João do Oeste", "São José do Cedro", "São Lourenço do Oeste", "São Miguel da Boa Vista", "São Miguel do Oeste", "Saudades", "Serra Alta", "Sul Brasil", "Tigrinhos", "Tunápolis", "União do Oeste", "Vidal Ramos", "Videira", "Xanxerê", "Xaxim", "Zortéa", "Capinzal"],
+            "Central": ["Alfredo Wagner", "Anita Garibaldi", "Bom Jardim da Serra", "Bom Retiro", "Botuverá", "Braço do Norte", "Brunópolis", "Campos Novos", "Catanduvas", "Celso Ramos", "Correia Pinto", "Curitibanos", "Erval Velho", "Fraiburgo", "Frei Rogério", "Herval d'Oeste", "Ibiam", "Ibicaré", "Iomerê", "Jaborá", "Lacerdópolis", "Lages", "Lebon Régis", "Lindóia do Sul", "Luzerna", "Macieira", "Matos Costa", "Monte Carlo", "Ouro", "Painel", "Palmeira", "Ponte Alta", "Ponte Alta do Norte", "Ponte Alta do Sul", "Rio Rufino", "Salto Veloso", "Santa Cecília", "São Joaquim", "São José do Cerrito", "Tangará", "Treze Tílias", "Urupema", "Vargem Bonita", "Videira", "Zortéa"]
         }
         
         if regiao in regioes:

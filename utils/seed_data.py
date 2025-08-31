@@ -75,14 +75,14 @@ def seed_imoveis():
             'status': 'comprado'
         },
         
-        # Região Sul - Capinzal
+        # Região Sul - Criciúma (Sul de SC)
         {
             'endereco': 'Rua XV de Novembro, 456',
-            'cidade': 'Capinzal',
+            'cidade': 'Criciúma',
             'estado': 'SC',
-            'cep': '89665-000',
-            'latitude': -27.3400,
-            'longitude': -51.6100,
+            'cep': '88801-000',
+            'latitude': -28.6775,
+            'longitude': -49.3697,
             'metragem': 110.0,
             'quartos': 3,
             'banheiros': 2,
@@ -96,11 +96,11 @@ def seed_imoveis():
         },
         {
             'endereco': 'Av. Getúlio Vargas, 321',
-            'cidade': 'Capinzal',
+            'cidade': 'Criciúma',
             'estado': 'SC',
-            'cep': '89665-000',
-            'latitude': -27.3420,
-            'longitude': -51.6120,
+            'cep': '88802-000',
+            'latitude': -28.6790,
+            'longitude': -49.3710,
             'metragem': 140.0,
             'quartos': 4,
             'banheiros': 3,
@@ -168,6 +168,25 @@ def seed_imoveis():
             'custos_reforma': 40000.0,
             'custos_transacao': 11000.0,
             'percentual_lucro_credor': 11.0,
+            'status': 'em_analise'
+        },
+        # Região Oeste - Capinzal
+        {
+            'endereco': 'Rua XV de Novembro, 456',
+            'cidade': 'Capinzal',
+            'estado': 'SC',
+            'cep': '89665-000',
+            'latitude': -27.3400,
+            'longitude': -51.6100,
+            'metragem': 110.0,
+            'quartos': 3,
+            'banheiros': 2,
+            'ano': 2014,
+            'padrao_acabamento': 'baixo',
+            'custo_aquisicao': 180000.0,
+            'custos_reforma': 25000.0,
+            'custos_transacao': 8000.0,
+            'percentual_lucro_credor': 8.0,
             'status': 'em_analise'
         },
         {
@@ -287,9 +306,8 @@ def seed_localizacao_indices():
         {'cidade': 'Florianópolis', 'bairro': 'Córrego Grande', 'cep': '88037-000', 'fator_localizacao': 1.10},
         
         # Região Sul
-        {'cidade': 'Capinzal', 'bairro': 'Centro', 'cep': '89665-000', 'fator_localizacao': 0.95},
-        {'cidade': 'Capinzal', 'bairro': 'Vila Nova', 'cep': '89665-000', 'fator_localizacao': 0.90},
-        {'cidade': 'Capinzal', 'bairro': 'Vila Nova', 'cep': '89665-000', 'fator_localizacao': 0.90},
+        {'cidade': 'Criciúma', 'bairro': 'Centro', 'cep': '88801-000', 'fator_localizacao': 0.95},
+        {'cidade': 'Criciúma', 'bairro': 'Vila Nova', 'cep': '88802-000', 'fator_localizacao': 0.90},
         
         # Região Leste
         {'cidade': 'Itajaí', 'bairro': 'Centro', 'cep': '88301-000', 'fator_localizacao': 1.20},
@@ -300,7 +318,8 @@ def seed_localizacao_indices():
         # Região Oeste
         {'cidade': 'Chapecó', 'bairro': 'Centro', 'cep': '89801-000', 'fator_localizacao': 1.10},
         {'cidade': 'Chapecó', 'bairro': 'Jardim Itália', 'cep': '89802-000', 'fator_localizacao': 1.15},
-        {'cidade': 'Chapecó', 'bairro': 'Jardim Itália', 'cep': '89802-000', 'fator_localizacao': 1.15},
+        {'cidade': 'Capinzal', 'bairro': 'Centro', 'cep': '89665-000', 'fator_localizacao': 0.95},
+        {'cidade': 'Capinzal', 'bairro': 'Vila Nova', 'cep': '89665-000', 'fator_localizacao': 0.90},
         
         # Região Central
         {'cidade': 'Blumenau', 'bairro': 'Centro', 'cep': '89010-000', 'fator_localizacao': 1.20},

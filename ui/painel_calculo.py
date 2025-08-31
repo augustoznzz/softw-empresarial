@@ -11,12 +11,13 @@ from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QFont, QColor, QPalette
 
 from models.imovel import Imovel
+from models.database import DatabaseManager
 from services.calculo_service import CalculoService
 
 class PainelCalculo(QWidget):
-    def __init__(self, db_manager):
+    def __init__(self):
         super().__init__()
-        self.db_manager = db_manager
+        self.db_manager = DatabaseManager()
         self.calculo_service = CalculoService()
         self.imovel_atual = None
         self.setup_ui()
@@ -436,11 +437,7 @@ class PainelCalculo(QWidget):
             lucro_desejado_investidor = self.lucro_investidor_slider.value() / 100
             
             # Calcular valores
-            calculos = self.calculo_service.calcular_imovel(
-                self.imovel_atual,
-                percentual_lucro_credor=percentual_lucro_credor,
-                lucro_desejado_investidor=lucro_desejado_investidor
-            )
+            calculos = self.calculo_service.calcular_tudo(self.imovel_atual)
             
             # Exibir resultados
             self.lbl_custo_total_valor.setText(f"R$ {calculos['custo_total']:,.2f}")

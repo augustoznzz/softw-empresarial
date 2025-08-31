@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
         left_layout.setContentsMargins(0, 0, 0, 0)
         
         # Widget de filtros
-        self.filtros_widget = FiltrosWidget(self.db_manager)
+        self.filtros_widget = FiltrosWidget()
         left_layout.addWidget(self.filtros_widget)
         
         # Adicionar painel esquerdo ao splitter
@@ -85,11 +85,11 @@ class MainWindow(QMainWindow):
         right_layout.setSpacing(15)
         
         # Tabela de imóveis
-        self.tabela_imoveis = TabelaImoveis(self.db_manager)
+        self.tabela_imoveis = TabelaImoveis()
         right_layout.addWidget(self.tabela_imoveis)
         
         # Painel de cálculos
-        self.painel_calculo = PainelCalculo(self.db_manager)
+        self.painel_calculo = PainelCalculo()
         right_layout.addWidget(self.painel_calculo)
         
         # Adicionar painel direito ao splitter

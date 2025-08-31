@@ -120,8 +120,8 @@ def test_calculos():
         # Criar imóvel de teste
         imovel_teste = Imovel(
             endereco="Rua Teste, 123",
-            cidade="São Paulo",
-            estado="SP",
+            cidade="Capinzal",
+            estado="SC",
             metragem=100.0,
             padrao_acabamento="medio",
             custo_aquisicao=300000.0,

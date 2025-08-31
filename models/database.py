@@ -99,18 +99,18 @@ class DatabaseManager:
     def insert_default_localizacao(self, cursor):
         """Insere dados de localização padrão"""
         default_localizacoes = [
-            ('São Paulo', 'Vila Madalena', '05433-000', 1.3),
-            ('São Paulo', 'Pinheiros', '05422-000', 1.25),
-            ('São Paulo', 'Itaim Bibi', '01452-000', 1.4),
-            ('São Paulo', 'Mooca', '03166-000', 0.9),
-            ('São Paulo', 'Tatuapé', '03064-000', 1.0),
-            ('Rio de Janeiro', 'Leblon', '22430-000', 1.35),
-            ('Rio de Janeiro', 'Ipanema', '22420-000', 1.3),
-            ('Rio de Janeiro', 'Copacabana', '22070-000', 1.2),
-            ('Rio de Janeiro', 'Tijuca', '20520-000', 0.95),
-            ('Belo Horizonte', 'Savassi', '30112-000', 1.2),
-            ('Belo Horizonte', 'Lourdes', '30180-000', 1.15),
-            ('Belo Horizonte', 'Centro', '30112-000', 0.9)
+            ('Florianópolis', 'Centro', '88010-000', 1.3),
+            ('Florianópolis', 'Trindade', '88040-000', 1.25),
+            ('Florianópolis', 'Córrego Grande', '88037-000', 1.4),
+            ('Criciúma', 'Centro', '88801-000', 0.9),
+            ('Criciúma', 'São Luiz', '88802-000', 1.0),
+            ('Capinzal', 'Centro', '89665-000', 0.8),
+            ('Capinzal', 'Vila Nova', '89665-001', 0.85),
+            ('Blumenau', 'Centro', '89010-000', 1.2),
+            ('Blumenau', 'Vila Nova', '89036-000', 1.15),
+            ('Joinville', 'Centro', '89201-000', 1.1),
+            ('Joinville', 'Boa Vista', '89205-000', 1.05),
+            ('Chapecó', 'Centro', '89801-000', 0.95)
         ]
         
         for cidade, bairro, cep, fator in default_localizacoes:
