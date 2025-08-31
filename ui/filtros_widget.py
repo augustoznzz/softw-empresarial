@@ -77,19 +77,58 @@ class FiltrosWidget(QWidget):
         
         # Remover título para aproveitar melhor o espaço
         
-        # Grupo de filtros - Aproveitando melhor o espaço
-        filtros_group = QGroupBox("Filtros")
+        # Grupo de filtros com design moderno
+        filtros_group = QGroupBox()
+        filtros_group.setStyleSheet("""
+            QGroupBox {
+                font-size: 16px;
+                font-weight: bold;
+                color: #495057;
+                border: 2px solid #dee2e6;
+                border-radius: 10px;
+                margin-top: 10px;
+                padding-top: 10px;
+                background-color: #f8f9fa;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 15px;
+                padding: 0 8px 0 8px;
+                background-color: #f8f9fa;
+                border-radius: 5px;
+            }
+        """)
+        filtros_group.setTitle("🔍 Filtros")
         filtros_layout = QGridLayout(filtros_group)
         filtros_layout.setSpacing(10)  # Aumentar espaçamento entre filtros
         filtros_layout.setVerticalSpacing(12)  # Espaçamento vertical maior entre linhas
         filtros_layout.setHorizontalSpacing(8)  # Espaçamento horizontal entre colunas
         
+        # Configurar responsividade das colunas
+        filtros_layout.setColumnStretch(1, 1)  # Coluna dos campos de input se expandem
+        filtros_layout.setColumnStretch(3, 1)  # Coluna dos combobox se expandem
+        
         # Organizar em 2x2 conforme a imagem
         # Posição 1: Busca (CEP)
         self.busca_edit = QLineEdit()
         self.busca_edit.setPlaceholderText("Buscar por CEP...")
-        self.busca_edit.setFixedWidth(120)  # Tamanho horizontal reduzido
-        filtros_layout.addWidget(QLabel("Busca:"), 0, 0)
+        self.busca_edit.setMinimumWidth(80)  # Largura mínima, mas responsiva
+        self.busca_edit.setStyleSheet("""
+            QLineEdit {
+                border: 2px solid #dee2e6;
+                border-radius: 6px;
+                padding: 8px 12px;
+                background-color: white;
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border-color: #3498db;
+                background-color: #f8fffe;
+            }
+        """)
+        busca_label = QLabel("Busca:")
+        busca_label.setStyleSheet("QLabel { font-weight: bold; color: #495057; }")
+        filtros_layout.addWidget(busca_label, 0, 0)
         filtros_layout.addWidget(self.busca_edit, 0, 1)
         
         # Posição 2: Região
@@ -97,23 +136,128 @@ class FiltrosWidget(QWidget):
         self.regiao_combo.addItem("Todas as regiões")
         regioes = ["Norte", "Sul", "Leste", "Oeste", "Central"]
         self.regiao_combo.addItems(regioes)
-        self.regiao_combo.setFixedWidth(130)  # Tamanho horizontal reduzido
-        filtros_layout.addWidget(QLabel("Região:"), 0, 2)
+        self.regiao_combo.setMinimumWidth(90)  # Largura mínima, mas responsiva
+        self.regiao_combo.setStyleSheet("""
+            QComboBox {
+                border: 2px solid #dee2e6;
+                border-radius: 6px;
+                padding: 8px 12px;
+                background-color: white;
+                font-size: 12px;
+                min-height: 20px;
+                color: #495057;
+            }
+            QComboBox:focus {
+                border-color: #27ae60;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border: 2px solid #495057;
+                border-radius: 2px;
+                background-color: #495057;
+                width: 6px;
+                height: 6px;
+            }
+            QComboBox QAbstractItemView {
+                border: 2px solid #dee2e6;
+                border-radius: 6px;
+                background-color: white;
+                selection-background-color: #e3f2fd;
+                selection-color: #1976d2;
+                padding: 4px;
+            }
+            QComboBox QAbstractItemView::item {
+                height: 25px;
+                padding: 4px 8px;
+                border-radius: 3px;
+            }
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #e3f2fd;
+                color: #1976d2;
+            }
+        """)
+        regiao_label = QLabel("Região:")
+        regiao_label.setStyleSheet("QLabel { font-weight: bold; color: #495057; }")
+        filtros_layout.addWidget(regiao_label, 0, 2)
         filtros_layout.addWidget(self.regiao_combo, 0, 3)
         
         # Posição 3: Busca Cidade
         self.busca_cidade_edit = QLineEdit()
         self.busca_cidade_edit.setPlaceholderText("Buscar cidade...")
-        self.busca_cidade_edit.setFixedWidth(120)  # Tamanho horizontal reduzido
-        filtros_layout.addWidget(QLabel("Busca Cidade:"), 1, 0)
+        self.busca_cidade_edit.setMinimumWidth(80)  # Largura mínima, mas responsiva
+        self.busca_cidade_edit.setStyleSheet("""
+            QLineEdit {
+                border: 2px solid #dee2e6;
+                border-radius: 6px;
+                padding: 8px 12px;
+                background-color: white;
+                font-size: 12px;
+            }
+            QLineEdit:focus {
+                border-color: #3498db;
+                background-color: #f8fffe;
+            }
+        """)
+        busca_cidade_label = QLabel("Busca Cidade:")
+        busca_cidade_label.setStyleSheet("QLabel { font-weight: bold; color: #495057; }")
+        filtros_layout.addWidget(busca_cidade_label, 1, 0)
         filtros_layout.addWidget(self.busca_cidade_edit, 1, 1)
         
         # Posição 4: Cidade
         self.cidade_combo = QComboBox()
         self.cidade_combo.addItem("Todas as cidades")
         self.cidade_combo.setMaximumHeight(100)
-        self.cidade_combo.setFixedWidth(150)  # Tamanho horizontal reduzido
-        filtros_layout.addWidget(QLabel("Cidade:"), 1, 2)
+        self.cidade_combo.setMinimumWidth(100)  # Largura mínima, mas responsiva
+        self.cidade_combo.setStyleSheet("""
+            QComboBox {
+                border: 2px solid #dee2e6;
+                border-radius: 6px;
+                padding: 8px 12px;
+                background-color: white;
+                font-size: 12px;
+                min-height: 20px;
+                color: #495057;
+            }
+            QComboBox:focus {
+                border-color: #27ae60;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 20px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border: 2px solid #495057;
+                border-radius: 2px;
+                background-color: #495057;
+                width: 6px;
+                height: 6px;
+            }
+            QComboBox QAbstractItemView {
+                border: 2px solid #dee2e6;
+                border-radius: 6px;
+                background-color: white;
+                selection-background-color: #e8f5e8;
+                selection-color: #2e7d32;
+                padding: 4px;
+            }
+            QComboBox QAbstractItemView::item {
+                height: 25px;
+                padding: 4px 8px;
+                border-radius: 3px;
+            }
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #e8f5e8;
+                color: #2e7d32;
+            }
+        """)
+        cidade_label = QLabel("Cidade:")
+        cidade_label.setStyleSheet("QLabel { font-weight: bold; color: #495057; }")
+        filtros_layout.addWidget(cidade_label, 1, 2)
         filtros_layout.addWidget(self.cidade_combo, 1, 3)
         
         # Status removido
@@ -127,63 +271,88 @@ class FiltrosWidget(QWidget):
         
         # Botão de busca online
         self.btn_busca_online = QPushButton("🔍 Busca Online")
-        self.btn_busca_online.setMaximumWidth(120)
+        self.btn_busca_online.setMinimumWidth(80)  # Largura mínima, mas responsivo
         self.btn_busca_online.setStyleSheet("""
             QPushButton {
-                background-color: #3498db;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #3498db, stop:1 #2980b9);
                 color: white;
                 border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
+                padding: 10px 16px;
+                border-radius: 8px;
                 font-weight: bold;
+                font-size: 12px;
             }
             QPushButton:hover {
-                background-color: #2980b9;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #2980b9, stop:1 #3498db);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #21618c, stop:1 #2980b9);
             }
         """)
         self.btn_busca_online.clicked.connect(self.buscar_online)
         buttons_layout.addWidget(self.btn_busca_online)
         
         self.btn_aplicar = QPushButton("✅ Aplicar Filtros")
-        self.btn_aplicar.setMaximumWidth(120)
+        self.btn_aplicar.setMinimumWidth(80)  # Largura mínima, mas responsivo
         self.btn_aplicar.setStyleSheet("""
             QPushButton {
-                background-color: #27ae60;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #27ae60, stop:1 #2ecc71);
                 color: white;
                 border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
+                padding: 10px 16px;
+                border-radius: 8px;
                 font-weight: bold;
+                font-size: 12px;
             }
             QPushButton:hover {
-                background-color: #2ecc71;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #2ecc71, stop:1 #27ae60);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #1e8449, stop:1 #27ae60);
             }
         """)
         buttons_layout.addWidget(self.btn_aplicar)
         
         self.btn_limpar = QPushButton("🧹 Limpar Filtros")
-        self.btn_limpar.setMaximumWidth(120)
+        self.btn_limpar.setMinimumWidth(80)  # Largura mínima, mas responsivo
         self.btn_limpar.setStyleSheet("""
             QPushButton {
-                background-color: #f39c12;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #f39c12, stop:1 #e67e22);
                 color: white;
                 border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
+                padding: 10px 16px;
+                border-radius: 8px;
                 font-weight: bold;
+                font-size: 12px;
             }
             QPushButton:hover {
-                background-color: #e67e22;
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #e67e22, stop:1 #f39c12);
+            }
+            QPushButton:pressed {
+                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                    stop:0 #d68910, stop:1 #e67e22);
             }
         """)
         buttons_layout.addWidget(self.btn_limpar)
-        buttons_layout.addStretch()  # Empurrar botões para a esquerda
+        
+        # Configurar responsividade dos botões
+        buttons_layout.setStretchFactor(self.btn_busca_online, 1)
+        buttons_layout.setStretchFactor(self.btn_aplicar, 1)
+        buttons_layout.setStretchFactor(self.btn_limpar, 1)
         
         layout.addLayout(buttons_layout)
         
         # Configurar layout
         self.setLayout(layout)
-        self.setMaximumWidth(420)  # Diminuir largura horizontal dos filtros
+        # Widget agora é totalmente responsivo - se adapta ao tamanho do painel esquerdo
         
         # Inicializar serviço de cidades
         self.inicializar_cidades()

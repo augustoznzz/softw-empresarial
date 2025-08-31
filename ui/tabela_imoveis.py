@@ -222,9 +222,11 @@ class TabelaImoveis(QWidget):
         
         # Ajustar tamanhos das colunas
         header = self.tabela.horizontalHeader()
-        header.setStretchLastSection(False)
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # ID
-        header.setSectionResizeMode(1, QHeaderView.Stretch)  # Endereço
+        header.setStretchLastSection(True)  # Última coluna (ROI) se expande
+        # Definir largura específica para a coluna ID (15% maior)
+        header.setSectionResizeMode(0, QHeaderView.Fixed)  # ID com largura fixa
+        header.resizeSection(0, 70)  # Largura fixa de 70px para a coluna ID
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # Endereço
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Cidade
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Estado
         header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # CEP
@@ -288,8 +290,14 @@ class TabelaImoveis(QWidget):
             # Calcular valores financeiros
             calculos = self.calculo_service.calcular_tudo(imovel)
             
-            # ID
-            self.tabela.setItem(row, 0, QTableWidgetItem(str(imovel.id)))
+            # ID - centralizado e com fonte maior
+            id_item = QTableWidgetItem(str(imovel.id))
+            id_item.setTextAlignment(Qt.AlignCenter)  # Centralizar o texto
+            font = QFont()
+            font.setBold(True)
+            font.setPointSize(11)  # Aumentar fonte ligeiramente
+            id_item.setFont(font)
+            self.tabela.setItem(row, 0, id_item)
             
             # Endereço
             self.tabela.setItem(row, 1, QTableWidgetItem(imovel.endereco))
