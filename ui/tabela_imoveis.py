@@ -217,8 +217,8 @@ class TabelaImoveis(QWidget):
         self.tabela.setSelectionMode(QTableWidget.SingleSelection)
         self.tabela.setSortingEnabled(True)
         
-        # Configurar altura mínima para mostrar pelo menos 5 linhas
-        self.tabela.setMinimumHeight(200)  # Altura mínima para 5 linhas + cabeçalho
+        # Configurar altura mínima para mostrar pelo menos 5 linhas (aumentada em 15%)
+        self.tabela.setMinimumHeight(230)  # Altura mínima aumentada de 200 para 230 (15% a mais)
         self.tabela.verticalHeader().setDefaultSectionSize(35)  # Altura de cada linha
         
         # Ajustar tamanhos das colunas

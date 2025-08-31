@@ -68,11 +68,7 @@ class FiltrosWidget(QWidget):
         """Inicializa a interface dos filtros"""
         layout = QVBoxLayout(self)
         
-        # Título
-        title = QLabel("🔍 Filtros e Busca")
-        title.setFont(QFont("Arial", 12, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
-        layout.addWidget(title)
+        # Remover título para aproveitar melhor o espaço
         
         # Grupo de filtros - Layout mais compacto
         filtros_group = QGroupBox("Filtros")
@@ -95,10 +91,12 @@ class FiltrosWidget(QWidget):
         
         # Busca de cidade com campo de pesquisa
         cidade_container = QVBoxLayout()
+        cidade_container.setSpacing(2)
         self.busca_cidade_edit = QLineEdit()
         self.busca_cidade_edit.setPlaceholderText("Buscar cidade...")
+        self.busca_cidade_edit.setMaximumHeight(25)
         self.cidade_combo = QComboBox()
-        self.cidade_combo.setMaximumHeight(80)  # Reduzir altura em 30%
+        self.cidade_combo.setMaximumHeight(60)  # Reduzir altura em 30% (de ~85 para 60)
         self.cidade_combo.addItem("Todas as cidades")
         cidade_container.addWidget(self.busca_cidade_edit)
         cidade_container.addWidget(self.cidade_combo)
@@ -122,56 +120,51 @@ class FiltrosWidget(QWidget):
         filtros_layout.addWidget(QLabel("Padrão:"), 4, 0)
         filtros_layout.addWidget(self.padrao_combo, 4, 1)
         
-        # Filtros numéricos
+        # Checkbox para filtros avançados
+        self.filtros_avancados_check = QCheckBox("Filtros Avançados")
+        self.filtros_avancados_check.setChecked(False)
+        filtros_layout.addWidget(self.filtros_avancados_check, 5, 0, 1, 2)
+        
+        # Filtros numéricos (avançados)
         self.metragem_min_spin = QDoubleSpinBox()
         self.metragem_min_spin.setRange(0, 10000)
         self.metragem_min_spin.setSuffix(" m²")
         self.metragem_min_spin.setSpecialValueText("Min")
-        filtros_layout.addWidget(QLabel("Metragem:"), 3, 2)
-        filtros_layout.addWidget(self.metragem_min_spin, 3, 3)
+        self.metragem_min_spin.setMaximumWidth(80)
         
         self.metragem_max_spin = QDoubleSpinBox()
         self.metragem_max_spin.setRange(0, 10000)
         self.metragem_max_spin.setSuffix(" m²")
         self.metragem_max_spin.setSpecialValueText("Max")
-        filtros_layout.addWidget(QLabel("Metragem Max:"), 4, 0)
-        filtros_layout.addWidget(self.metragem_max_spin, 4, 1)
+        self.metragem_max_spin.setMaximumWidth(80)
         
         # Filtros financeiros
         self.custo_min_spin = QDoubleSpinBox()
         self.custo_min_spin.setRange(0, 10000000)
         self.custo_min_spin.setPrefix("R$ ")
         self.custo_min_spin.setSpecialValueText("Min")
-        filtros_layout.addWidget(QLabel("Custo Total:"), 4, 2)
-        filtros_layout.addWidget(self.custo_min_spin, 4, 3)
+        self.custo_min_spin.setMaximumWidth(90)
         
         self.custo_max_spin = QDoubleSpinBox()
         self.custo_max_spin.setRange(0, 10000000)
         self.custo_max_spin.setPrefix("R$ ")
         self.custo_max_spin.setSpecialValueText("Max")
-        filtros_layout.addWidget(QLabel("Custo Max:"), 5, 0)
-        filtros_layout.addWidget(self.custo_max_spin, 5, 1)
+        self.custo_max_spin.setMaximumWidth(90)
         
         # ROI mínimo
         self.roi_min_spin = QDoubleSpinBox()
         self.roi_min_spin.setRange(-100, 1000)
         self.roi_min_spin.setValue(0)
         self.roi_min_spin.setSuffix(" %")
-        filtros_layout.addWidget(QLabel("ROI Mínimo:"), 5, 2)
-        filtros_layout.addWidget(self.roi_min_spin, 5, 3)
+        self.roi_min_spin.setMaximumWidth(70)
         
         # Margem mínima
         self.margem_min_spin = QDoubleSpinBox()
         self.margem_min_spin.setRange(-1000000, 10000000)
         self.margem_min_spin.setValue(0)
         self.margem_min_spin.setPrefix("R$ ")
-        filtros_layout.addWidget(QLabel("Margem Mínima:"), 6, 0)
-        filtros_layout.addWidget(self.margem_min_spin, 6, 1)
-        
-        # Filtros avançados
-        self.filtros_avancados_check = QCheckBox("Filtros Avançados")
-        self.filtros_avancados_check.setChecked(False)
-        filtros_layout.addWidget(self.filtros_avancados_check, 6, 2, 1, 2)
+        self.margem_min_spin.setMaximumWidth(90)
+
         
         # Filtros avançados (inicialmente ocultos)
         self.quartos_min_spin = QSpinBox()
@@ -275,7 +268,7 @@ class FiltrosWidget(QWidget):
         
         # Configurar layout
         self.setLayout(layout)
-        self.setMaximumWidth(250)  # Reduzir em 50% (de 500 para 250)
+        self.setMaximumWidth(500)  # Voltar ao tamanho original
         
         # Inicializar serviço de cidades
         self.inicializar_cidades()
@@ -311,7 +304,7 @@ class FiltrosWidget(QWidget):
         
         # Conectar mudanças nos filtros para atualização automática
         self.busca_edit.textChanged.connect(self.on_filtro_changed)
-        self.estado_combo.currentTextChanged.connect(self.on_filtro_changed)
+        self.busca_cidade_edit.textChanged.connect(self.on_busca_cidade_changed)
         self.regiao_combo.currentTextChanged.connect(self.on_regiao_changed)
         self.cidade_combo.currentTextChanged.connect(self.on_filtro_changed)
         self.status_combo.currentTextChanged.connect(self.on_filtro_changed)
@@ -344,6 +337,39 @@ class FiltrosWidget(QWidget):
             self.cidade_combo.clear()
             self.cidade_combo.addItem("Todas as cidades")
             self.cidade_combo.addItems(self.todas_cidades_sc)
+    
+    def on_busca_cidade_changed(self, texto):
+        """Chamado quando o texto de busca de cidade é alterado"""
+        try:
+            texto = texto.strip().lower()
+            
+            # Se não há texto, mostrar todas as cidades da região
+            if not texto:
+                self.on_regiao_changed(self.regiao_combo.currentText())
+                return
+            
+            # Filtrar cidades baseado no texto de busca (case-insensitive)
+            regiao_selecionada = self.regiao_combo.currentText()
+            
+            if regiao_selecionada == "Todas as regiões":
+                cidades_base = self.todas_cidades_sc
+            else:
+                cidades_por_regiao = self.cidade_service.get_cidades_por_regiao(regiao_selecionada)
+                cidades_base = [cidade['nome'] for cidade in cidades_por_regiao]
+            
+            # Filtrar cidades que contêm o texto de busca
+            cidades_filtradas = [
+                cidade for cidade in cidades_base 
+                if texto in cidade.lower()
+            ]
+            
+            # Atualizar combo de cidades
+            self.cidade_combo.clear()
+            self.cidade_combo.addItem("Todas as cidades")
+            self.cidade_combo.addItems(cidades_filtradas)
+            
+        except Exception as e:
+            logging.error(f"Erro na busca de cidade: {e}")
         
     def toggle_filtros_avancados(self, show: bool):
         """Mostra/oculta filtros avançados"""
@@ -385,10 +411,6 @@ class FiltrosWidget(QWidget):
         # Busca por texto
         if self.busca_edit.text().strip():
             filtros['busca'] = self.busca_edit.text().strip()
-            
-        # Estado
-        if self.estado_combo.currentText() != "SC":
-            filtros['estado'] = self.estado_combo.currentText()
             
         # Região
         if self.regiao_combo.currentText() != "Todas as regiões":
@@ -438,9 +460,9 @@ class FiltrosWidget(QWidget):
             if self.banheiros_max_spin.value() > 0:
                 filtros['banheiros_max'] = self.banheiros_max_spin.value()
                 
-            if self.ano_min_spin.value() > 0:
+            if self.ano_min_spin.value() > 1900:
                 filtros['ano_min'] = self.ano_min_spin.value()
-            if self.ano_max_spin.value() > 0:
+            if self.ano_max_spin.value() < 2030:
                 filtros['ano_max'] = self.ano_max_spin.value()
                 
         return filtros
@@ -453,9 +475,9 @@ class FiltrosWidget(QWidget):
     def limpar_filtros(self):
         """Limpa todos os filtros"""
         self.busca_edit.clear()
+        self.busca_cidade_edit.clear()
         self.regiao_combo.setCurrentIndex(0)
         self.cidade_combo.setCurrentIndex(0)
-        self.estado_combo.setCurrentIndex(0)
         self.status_combo.setCurrentIndex(0)
         self.padrao_combo.setCurrentIndex(0)
         self.metragem_min_spin.setValue(0)

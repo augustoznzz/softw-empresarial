@@ -202,6 +202,29 @@ QTableWidget::item:selected:active {
 - **Cobertura de Cidades**: ✅ Todas as 295+ cidades de SC
 - **Performance**: ✅ Otimizada com cache local
 
+## 🆕 NOVA VERSÃO 3.1 - Interface Otimizada
+
+### 🎨 Melhorias de Interface
+- **Redução de 50%** no tamanho da seção de filtros (de 500px para 250px)
+- **Layout mais compacto** e harmonioso dos controles
+- **Redução de 30%** no tamanho da lista de cidades
+- **Aumento de 15%** no tamanho vertical da tabela de resultados
+
+### 🔍 Nova Funcionalidade: Busca Inteligente de Cidades
+- **Campo de busca case-insensitive** para cidades
+- **Busca em tempo real** conforme você digita
+- **Filtro inteligente** que combina região selecionada + texto de busca
+- **295 cidades** de Santa Catarina disponíveis
+
+### 📊 Cobertura Completa de Santa Catarina
+- **295 municípios** oficiais do IBGE
+- **Distribuição equilibrada** por regiões:
+  - Central: 106 cidades
+  - Oeste: 70 cidades  
+  - Norte: 52 cidades
+  - Sul: 38 cidades
+  - Leste: 29 cidades
+
 ## 🎯 Próximos Passos (Opcionais)
 
 Para futuras versões, considerar:
@@ -212,7 +235,7 @@ Para futuras versões, considerar:
 
 ---
 
-**Sistema de Negociação de Imóveis** - Versão 3.0  
+**Sistema de Negociação de Imóveis** - Versão 3.1  
 *Implementado com PySide6, Python 3.13 e SQLite*  
 *Data: 30/08/2025*  
-*Última atualização: Sistema híbrido de cidades com API do IBGE e todas as cidades de Santa Catarina*
+*Última atualização: Interface otimizada, busca inteligente de cidades case-insensitive e todas as 295 cidades de SC*
