@@ -7,13 +7,15 @@ Tabela de imóveis com filtros e ordenação
 import logging
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, 
                                QTableWidgetItem, QHeaderView, QLabel, QPushButton,
-                               QGroupBox, QFrame)
+                               QGroupBox, QFrame, QMessageBox, QFileDialog)
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QFont, QColor, QPalette
 
 from models.imovel import Imovel
 from models.database import DatabaseManager
+from utils.formatacao import formatar_moeda
 from services.calculo_service import CalculoService
+from services.export_service import ExportService
 
 class TabelaImoveis(QWidget):
     imovel_selecionado = Signal(Imovel)
@@ -22,9 +24,13 @@ class TabelaImoveis(QWidget):
         super().__init__()
         self.db_manager = DatabaseManager()
         self.calculo_service = CalculoService()
+        self.export_service = ExportService()
         self.imoveis = []
         self.imoveis_filtrados = []
+        self.imovel_selecionado_atual = None
         self.setup_ui()
+        self.setup_connections()
+        self.carregar_imoveis()
         
     def setup_ui(self):
         """Configura a interface da tabela de imóveis"""
@@ -202,9 +208,9 @@ class TabelaImoveis(QWidget):
             }
         """)
         
-        # Configurar cabeçalhos
+        # Configurar cabeçalhos - Removido endereço, mantido apenas CEP
         headers = [
-            "ID", "Endereço", "Cidade", "Estado", "CEP", 
+            "ID", "CEP", "Cidade", "Estado", 
             "Custo Total (R$)", "Preço Estimado (R$)", "Margem (R$)", "ROI (%)"
         ]
         self.tabela.setColumnCount(len(headers))
@@ -253,6 +259,20 @@ class TabelaImoveis(QWidget):
         self.status_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.status_label)
         
+    def setup_connections(self):
+        """Configura as conexões dos botões"""
+        # Conectar botões de ação
+        self.btn_novo.clicked.connect(self.novo_imovel)
+        self.btn_editar.clicked.connect(self.editar_imovel)
+        self.btn_excluir.clicked.connect(self.excluir_imovel)
+        
+        # Conectar botões de exportação
+        self.btn_export_pdf.clicked.connect(self.exportar_pdf)
+        self.btn_export_excel.clicked.connect(self.exportar_excel)
+        
+        # Habilitar/desabilitar botões baseado na seleção
+        self.atualizar_botoes()
+        
     def carregar_imoveis(self):
         """Carrega todos os imóveis do banco"""
         try:
@@ -260,7 +280,7 @@ class TabelaImoveis(QWidget):
                 SELECT id, endereco, cidade, estado, cep, metragem, 
                        custo_aquisicao, custos_reforma, custos_transacao
                 FROM imoveis 
-                ORDER BY cidade, endereco
+                ORDER BY cidade, cep
             """
             results = self.db_manager.execute_query(query)
             
@@ -299,8 +319,8 @@ class TabelaImoveis(QWidget):
             id_item.setFont(font)
             self.tabela.setItem(row, 0, id_item)
             
-            # Endereço
-            self.tabela.setItem(row, 1, QTableWidgetItem(imovel.endereco))
+            # CEP (movido para posição 1, removendo endereço)
+            self.tabela.setItem(row, 1, QTableWidgetItem(imovel.cep))
             
             # Cidade
             self.tabela.setItem(row, 2, QTableWidgetItem(imovel.cidade))
@@ -308,27 +328,24 @@ class TabelaImoveis(QWidget):
             # Estado
             self.tabela.setItem(row, 3, QTableWidgetItem(imovel.estado))
             
-            # CEP
-            self.tabela.setItem(row, 4, QTableWidgetItem(imovel.cep))
-            
-            # Custo Total
+            # Custo Total (índice corrigido após remoção do endereço)
             custo_total = calculos['custo_total']
-            self.tabela.setItem(row, 5, QTableWidgetItem(f"R$ {custo_total:,.2f}"))
+            self.tabela.setItem(row, 4, QTableWidgetItem(formatar_moeda(custo_total)))
             
             # Preço Estimado
             preco_estimado = calculos['preco_venda_estimado']
-            self.tabela.setItem(row, 6, QTableWidgetItem(f"R$ {preco_estimado:,.2f}"))
+            self.tabela.setItem(row, 5, QTableWidgetItem(formatar_moeda(preco_estimado)))
             
             # Margem
             margem = calculos['margem']
-            margem_item = QTableWidgetItem(f"R$ {margem:,.2f}")
+            margem_item = QTableWidgetItem(formatar_moeda(margem))
             if margem > 0:
                 margem_item.setBackground(QColor(220, 255, 220))  # Verde claro
             elif margem < 0:
                 margem_item.setBackground(QColor(255, 220, 220))  # Vermelho claro
             else:
                 margem_item.setBackground(QColor(255, 255, 220))  # Amarelo claro
-            self.tabela.setItem(row, 7, margem_item)
+            self.tabela.setItem(row, 6, margem_item)
             
             # ROI
             roi = calculos['roi']
@@ -339,7 +356,7 @@ class TabelaImoveis(QWidget):
                 roi_item.setBackground(QColor(255, 220, 220))  # Vermelho claro
             else:
                 roi_item.setBackground(QColor(255, 255, 220))  # Amarelo claro
-            self.tabela.setItem(row, 8, roi_item)
+            self.tabela.setItem(row, 7, roi_item)
             
     def aplicar_filtros(self, filtros):
         """Aplica filtros à lista de imóveis"""
@@ -404,4 +421,158 @@ class TabelaImoveis(QWidget):
         current_row = self.tabela.currentRow()
         if current_row >= 0 and current_row < len(self.imoveis_filtrados):
             imovel_selecionado = self.imoveis_filtrados[current_row]
+            self.imovel_selecionado_atual = imovel_selecionado
             self.imovel_selecionado.emit(imovel_selecionado)
+        else:
+            self.imovel_selecionado_atual = None
+        self.atualizar_botoes()
+        
+    def atualizar_botoes(self):
+        """Atualiza o estado dos botões baseado na seleção"""
+        tem_selecao = self.imovel_selecionado_atual is not None
+        self.btn_editar.setEnabled(tem_selecao)
+        self.btn_excluir.setEnabled(tem_selecao)
+        
+    def novo_imovel(self):
+        """Abre o formulário para criar um novo imóvel"""
+        try:
+            from ui.imovel_form import ImovelForm
+            
+            self.form_dialog = ImovelForm()
+            self.form_dialog.imovel_salvo.connect(self.on_imovel_salvo)
+            self.form_dialog.setWindowTitle("Novo Imóvel")
+            self.form_dialog.show()
+            
+        except Exception as e:
+            logging.error(f"Erro ao abrir formulário de novo imóvel: {e}")
+            QMessageBox.critical(self, "Erro", f"Erro ao abrir formulário: {str(e)}")
+            
+    def editar_imovel(self):
+        """Abre o formulário para editar o imóvel selecionado"""
+        if not self.imovel_selecionado_atual:
+            QMessageBox.warning(self, "Aviso", "Selecione um imóvel para editar.")
+            return
+            
+        try:
+            from ui.imovel_form import ImovelForm
+            
+            self.form_dialog = ImovelForm()
+            self.form_dialog.imovel_salvo.connect(self.on_imovel_salvo)
+            self.form_dialog.load_imovel(self.imovel_selecionado_atual)
+            self.form_dialog.setWindowTitle(f"Editar Imóvel - {self.imovel_selecionado_atual.cidade}")
+            self.form_dialog.show()
+            
+        except Exception as e:
+            logging.error(f"Erro ao abrir formulário de edição: {e}")
+            QMessageBox.critical(self, "Erro", f"Erro ao abrir formulário: {str(e)}")
+            
+    def excluir_imovel(self):
+        """Exclui o imóvel selecionado"""
+        if not self.imovel_selecionado_atual:
+            QMessageBox.warning(self, "Aviso", "Selecione um imóvel para excluir.")
+            return
+            
+        # Confirmar exclusão
+        resposta = QMessageBox.question(
+            self, 
+            "Confirmar Exclusão", 
+            f"Tem certeza que deseja excluir o imóvel em {self.imovel_selecionado_atual.cidade}?\n\n"
+            f"CEP: {self.imovel_selecionado_atual.cep}\n"
+            f"Esta ação não pode ser desfeita.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if resposta == QMessageBox.Yes:
+            try:
+                # Excluir do banco
+                query = "DELETE FROM imoveis WHERE id = ?"
+                self.db_manager.execute_query(query, (self.imovel_selecionado_atual.id,))
+                
+                # Recarregar tabela
+                self.carregar_imoveis()
+                
+                QMessageBox.information(self, "Sucesso", "Imóvel excluído com sucesso!")
+                
+            except Exception as e:
+                logging.error(f"Erro ao excluir imóvel: {e}")
+                QMessageBox.critical(self, "Erro", f"Erro ao excluir imóvel: {str(e)}")
+                
+    def exportar_pdf(self):
+        """Exporta os dados filtrados para PDF"""
+        try:
+            # Verificar se há dados para exportar
+            if not self.imoveis_filtrados:
+                QMessageBox.warning(self, "Aviso", "Não há dados para exportar.")
+                return
+                
+            # Selecionar arquivo de destino
+            arquivo, _ = QFileDialog.getSaveFileName(
+                self,
+                "Salvar Relatório PDF",
+                f"relatorio_imoveis_{len(self.imoveis_filtrados)}_items.pdf",
+                "Arquivos PDF (*.pdf)"
+            )
+            
+            if arquivo:
+                # Exportar
+                sucesso = self.export_service.export_to_pdf(self.imoveis_filtrados, arquivo)
+                
+                if sucesso:
+                    QMessageBox.information(
+                        self, 
+                        "Sucesso", 
+                        f"Relatório PDF exportado com sucesso!\n\n"
+                        f"Arquivo: {arquivo}\n"
+                        f"Imóveis: {len(self.imoveis_filtrados)}"
+                    )
+                else:
+                    QMessageBox.critical(self, "Erro", "Erro ao exportar para PDF.")
+                    
+        except Exception as e:
+            logging.error(f"Erro na exportação PDF: {e}")
+            QMessageBox.critical(self, "Erro", f"Erro na exportação PDF: {str(e)}")
+            
+    def exportar_excel(self):
+        """Exporta os dados filtrados para Excel"""
+        try:
+            # Verificar se há dados para exportar
+            if not self.imoveis_filtrados:
+                QMessageBox.warning(self, "Aviso", "Não há dados para exportar.")
+                return
+                
+            # Selecionar arquivo de destino
+            arquivo, _ = QFileDialog.getSaveFileName(
+                self,
+                "Salvar Planilha Excel",
+                f"imoveis_detalhado_{len(self.imoveis_filtrados)}_items.xlsx",
+                "Arquivos Excel (*.xlsx)"
+            )
+            
+            if arquivo:
+                # Exportar
+                sucesso = self.export_service.export_to_excel(self.imoveis_filtrados, arquivo)
+                
+                if sucesso:
+                    QMessageBox.information(
+                        self, 
+                        "Sucesso", 
+                        f"Planilha Excel exportada com sucesso!\n\n"
+                        f"Arquivo: {arquivo}\n"
+                        f"Imóveis: {len(self.imoveis_filtrados)}"
+                    )
+                else:
+                    QMessageBox.critical(self, "Erro", "Erro ao exportar para Excel.")
+                    
+        except Exception as e:
+            logging.error(f"Erro na exportação Excel: {e}")
+            QMessageBox.critical(self, "Erro", f"Erro na exportação Excel: {str(e)}")
+            
+    def on_imovel_salvo(self, imovel):
+        """Chamado quando um imóvel é salvo"""
+        # Recarregar a tabela para mostrar as mudanças
+        self.carregar_imoveis()
+        
+        # Fechar o formulário se ele ainda existir
+        if hasattr(self, 'form_dialog'):
+            self.form_dialog.close()

@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import List, Dict, Any
 from models.imovel import Imovel
 from models.database import DatabaseManager
+from utils.formatacao import formatar_moeda
 import logging
 
 try:
@@ -86,9 +87,9 @@ class ExportService:
             
             # Tabela de imóveis
             if imoveis:
-                # Cabeçalhos
+                # Cabeçalhos - Removido endereço, mantido apenas CEP
                 headers = [
-                    'Endereço', 'Cidade', 'Metragem', 'Custo Total', 
+                    'CEP', 'Cidade', 'Metragem', 'Custo Total', 
                     'Preço Estimado', 'Margem', 'ROI (%)', 'Status'
                 ]
                 
@@ -102,12 +103,12 @@ class ExportService:
                     roi = (margem / custo_total * 100) if custo_total > 0 else 0
                     
                     row = [
-                        imovel.endereco[:30] + "..." if len(imovel.endereco) > 30 else imovel.endereco,
+                        imovel.cep,  # Removido endereço, mantido apenas CEP
                         imovel.cidade,
                         f"{imovel.metragem:.1f} m²",
-                        f"R$ {custo_total:,.2f}",
-                        f"R$ {preco_estimado:,.2f}",
-                        f"R$ {margem:,.2f}",
+                        formatar_moeda(custo_total),
+                        formatar_moeda(preco_estimado),
+                        formatar_moeda(margem),
                         f"{roi:.1f}%",
                         imovel.status.replace('_', ' ').title()
                     ]
@@ -144,26 +145,29 @@ class ExportService:
                 roi_medio = (total_margem / total_custo * 100) if total_custo > 0 else 0
                 
                 resumo_data = [
-                    ['Total Custo', 'Total Preço Estimado', 'Total Margem', 'ROI Médio'],
+                    ['Total Custo', 'Total Preço\nEstimado', 'Total Margem', 'ROI Médio'],
                     [
-                        f"R$ {total_custo:,.2f}",
-                        f"R$ {total_preco_estimado:,.2f}",
-                        f"R$ {total_margem:,.2f}",
+                        formatar_moeda(total_custo),
+                        formatar_moeda(total_preco_estimado),
+                        formatar_moeda(total_margem),
                         f"{roi_medio:.1f}%"
                     ]
                 ]
                 
-                resumo_table = Table(resumo_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+                # Ajustar larguras das colunas: expandir "Total Preço Estimado" e reduzir 5% "ROI Médio"
+                resumo_table = Table(resumo_data, colWidths=[1.4*inch, 2.0*inch, 1.4*inch, 1.425*inch])
                 resumo_style = TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 12),
+                    ('FONTSIZE', (0, 0), (-1, 0), 11),  # Reduzir fonte do cabeçalho para 11
                     ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
                     ('BACKGROUND', (0, 1), (-1, -1), colors.lightblue),
                     ('GRID', (0, 0), (-1, -1), 1, colors.black),
                     ('FONTSIZE', (0, 1), (-1, -1), 10),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('WORDWRAP', (0, 0), (-1, -1), True),  # Permitir quebra de linha
                 ])
                 
                 resumo_table.setStyle(resumo_style)
@@ -194,9 +198,9 @@ class ExportService:
             header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
             header_alignment = Alignment(horizontal="center", vertical="center")
             
-            # Cabeçalhos
+            # Cabeçalhos - Removido endereço, reorganizada ordem
             headers = [
-                'ID', 'Endereço', 'Cidade', 'Estado', 'CEP', 'Metragem', 'Quartos', 'Banheiros',
+                'ID', 'CEP', 'Cidade', 'Estado', 'Metragem', 'Quartos', 'Banheiros',
                 'Ano', 'Padrão', 'Custo Aquisição', 'Custos Reforma', 'Custos Transação',
                 'Custo Total', 'Preço Estimado', 'Margem', 'ROI (%)', 'Status'
             ]
@@ -215,36 +219,35 @@ class ExportService:
                 margem = preco_estimado - custo_total
                 roi = (margem / custo_total * 100) if custo_total > 0 else 0
                 
-                # Preencher linha
+                # Preencher linha - Removido endereço, reorganizadas colunas
                 ws.cell(row=row, column=1, value=imovel.id)
-                ws.cell(row=row, column=2, value=imovel.endereco)
+                ws.cell(row=row, column=2, value=imovel.cep)  # CEP movido para coluna 2
                 ws.cell(row=row, column=3, value=imovel.cidade)
                 ws.cell(row=row, column=4, value=imovel.estado)
-                ws.cell(row=row, column=5, value=imovel.cep)
-                ws.cell(row=row, column=6, value=imovel.metragem)
-                ws.cell(row=row, column=7, value=imovel.quartos)
-                ws.cell(row=row, column=8, value=imovel.banheiros)
-                ws.cell(row=row, column=9, value=imovel.ano)
-                ws.cell(row=row, column=10, value=imovel.padrao_acabamento)
-                ws.cell(row=row, column=11, value=imovel.custo_aquisicao)
-                ws.cell(row=row, column=12, value=imovel.custos_reforma)
-                ws.cell(row=row, column=13, value=imovel.custos_transacao)
-                ws.cell(row=row, column=14, value=custo_total)
-                ws.cell(row=row, column=15, value=preco_estimado)
-                ws.cell(row=row, column=16, value=margem)
-                ws.cell(row=row, column=17, value=roi)
-                ws.cell(row=row, column=18, value=imovel.status)
+                ws.cell(row=row, column=5, value=imovel.metragem)  # Corrigido índice após remoção do endereço
+                ws.cell(row=row, column=6, value=imovel.quartos)
+                ws.cell(row=row, column=7, value=imovel.banheiros)
+                ws.cell(row=row, column=8, value=imovel.ano)
+                ws.cell(row=row, column=9, value=imovel.padrao_acabamento)
+                ws.cell(row=row, column=10, value=imovel.custo_aquisicao)
+                ws.cell(row=row, column=11, value=imovel.custos_reforma)
+                ws.cell(row=row, column=12, value=imovel.custos_transacao)
+                ws.cell(row=row, column=13, value=custo_total)
+                ws.cell(row=row, column=14, value=preco_estimado)
+                ws.cell(row=row, column=15, value=margem)
+                ws.cell(row=row, column=16, value=roi)
+                ws.cell(row=row, column=17, value=imovel.status)  # Corrigido índice da coluna status
                 
-                # Formatar valores monetários
-                for col in [11, 12, 13, 14, 15, 16]:
+                # Formatar valores monetários - Índices corrigidos após remoção do endereço
+                for col in [10, 11, 12, 13, 14, 15]:
                     cell = ws.cell(row=row, column=col)
-                    cell.number_format = 'R$ #,##0.00'
+                    cell.number_format = 'R$ #.##0'  # Formato brasileiro: pontos como separador de milhares, sem centavos
                     
-                # Formatar ROI
-                ws.cell(row=row, column=17).number_format = '0.0%'
+                # Formatar ROI - Corrigido índice
+                ws.cell(row=row, column=16).number_format = '0.0%'
                 
-                # Formatar metragem
-                ws.cell(row=row, column=6).number_format = '0.0'
+                # Formatar metragem - Corrigido índice
+                ws.cell(row=row, column=5).number_format = '0.0'
                 
             # Ajustar largura das colunas
             for column in ws.columns:
@@ -314,3 +317,7 @@ class ExportService:
             formats.append("Excel")
             
         return formats
+        
+    def get_available_formats(self) -> List[str]:
+        """Alias para get_export_formats"""
+        return self.get_export_formats()

@@ -138,9 +138,11 @@ def test_calculos():
         # Verificar resultados
         if resultado:
             print(f"  ✅ Cálculos executados:")
-            print(f"    - Preço estimado: R$ {resultado.get('preco_venda_estimado', 0):,.2f}")
-            print(f"    - Custo total: R$ {resultado.get('custo_total', 0):,.2f}")
-            print(f"    - Margem: R$ {resultado.get('margem', 0):,.2f}")
+            # Importar formatação local para teste
+            from utils.formatacao import formatar_moeda
+            print(f"    - Preço estimado: {formatar_moeda(resultado.get('preco_venda_estimado', 0))}")
+            print(f"    - Custo total: {formatar_moeda(resultado.get('custo_total', 0))}")
+            print(f"    - Margem: {formatar_moeda(resultado.get('margem', 0))}")
             print(f"    - ROI: {resultado.get('roi', 0):.1f}%")
         else:
             print("  ❌ Cálculos falharam")

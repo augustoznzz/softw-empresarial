@@ -13,6 +13,7 @@ from PySide6.QtGui import QFont, QColor, QPalette
 from models.imovel import Imovel
 from models.database import DatabaseManager
 from services.calculo_service import CalculoService
+from utils.formatacao import formatar_moeda, formatar_percentual
 
 class PainelCalculo(QWidget):
     def __init__(self):
@@ -107,9 +108,9 @@ class PainelCalculo(QWidget):
         info_layout = QGridLayout()
         self.info_group.setLayout(info_layout)
         
-        # Labels de informação
-        self.lbl_endereco = QLabel("Endereço: Nenhum imóvel selecionado")
-        self.lbl_endereco.setStyleSheet("""
+        # Labels de informação - Removido endereço, mantido apenas CEP
+        self.lbl_cep = QLabel("CEP: Nenhum imóvel selecionado")
+        self.lbl_cep.setStyleSheet("""
             QLabel {
                 font-size: 14px;
                 font-weight: bold;
@@ -117,7 +118,7 @@ class PainelCalculo(QWidget):
                 padding: 5px;
             }
         """)
-        info_layout.addWidget(self.lbl_endereco, 0, 0, 1, 2)
+        info_layout.addWidget(self.lbl_cep, 0, 0, 1, 2)
         
         self.lbl_cidade_estado = QLabel("Cidade/Estado: -")
         self.lbl_cidade_estado.setStyleSheet("""
@@ -207,7 +208,7 @@ class PainelCalculo(QWidget):
         """)
         resultados_layout.addWidget(self.lbl_custo_total_titulo, 0, 0)
         
-        self.lbl_custo_total_valor = QLabel("R$ 0,00")
+        self.lbl_custo_total_valor = QLabel("R$ 0")
         self.lbl_custo_total_valor.setStyleSheet("""
             QLabel {
                 font-size: 14px;
@@ -230,7 +231,7 @@ class PainelCalculo(QWidget):
         """)
         resultados_layout.addWidget(self.lbl_preco_estimado_titulo, 1, 0)
         
-        self.lbl_preco_estimado_valor = QLabel("R$ 0,00")
+        self.lbl_preco_estimado_valor = QLabel("R$ 0")
         self.lbl_preco_estimado_valor.setStyleSheet("""
             QLabel {
                 font-size: 14px;
@@ -253,7 +254,7 @@ class PainelCalculo(QWidget):
         """)
         resultados_layout.addWidget(self.lbl_lucro_credor_calc_titulo, 2, 0)
         
-        self.lbl_lucro_credor_calc_valor = QLabel("R$ 0,00")
+        self.lbl_lucro_credor_calc_valor = QLabel("R$ 0")
         self.lbl_lucro_credor_calc_valor.setStyleSheet("""
             QLabel {
                 font-size: 14px;
@@ -276,7 +277,7 @@ class PainelCalculo(QWidget):
         """)
         resultados_layout.addWidget(self.lbl_lucro_investidor_calc_titulo, 3, 0)
         
-        self.lbl_lucro_investidor_calc_valor = QLabel("R$ 0,00")
+        self.lbl_lucro_investidor_calc_valor = QLabel("R$ 0")
         self.lbl_lucro_investidor_calc_valor.setStyleSheet("""
             QLabel {
                 font-size: 14px;
@@ -299,7 +300,7 @@ class PainelCalculo(QWidget):
         """)
         resultados_layout.addWidget(self.lbl_preco_minimo_titulo, 4, 0)
         
-        self.lbl_preco_minimo_valor = QLabel("R$ 0,00")
+        self.lbl_preco_minimo_valor = QLabel("R$ 0")
         self.lbl_preco_minimo_valor.setStyleSheet("""
             QLabel {
                 font-size: 14px;
@@ -329,7 +330,7 @@ class PainelCalculo(QWidget):
         """)
         indicadores_layout.addWidget(self.lbl_margem_titulo, 0, 0)
         
-        self.lbl_margem_valor = QLabel("R$ 0,00")
+        self.lbl_margem_valor = QLabel("R$ 0")
         self.lbl_margem_valor.setStyleSheet("""
             QLabel {
                 font-size: 16px;
@@ -417,11 +418,11 @@ class PainelCalculo(QWidget):
     def atualizar_informacoes(self):
         """Atualiza as informações básicas do imóvel"""
         if self.imovel_atual:
-            self.lbl_endereco.setText(f"Endereço: {self.imovel_atual.endereco}")
+            self.lbl_cep.setText(f"CEP: {self.imovel_atual.cep}")
             self.lbl_cidade_estado.setText(f"Cidade/Estado: {self.imovel_atual.cidade}/{self.imovel_atual.estado}")
             self.lbl_metragem.setText(f"Metragem: {self.imovel_atual.metragem:.1f} m²")
         else:
-            self.lbl_endereco.setText("Endereço: Nenhum imóvel selecionado")
+            self.lbl_cep.setText("CEP: Nenhum imóvel selecionado")
             self.lbl_cidade_estado.setText("Cidade/Estado: -")
             self.lbl_metragem.setText("Metragem: -")
             
@@ -440,15 +441,15 @@ class PainelCalculo(QWidget):
             calculos = self.calculo_service.calcular_tudo(self.imovel_atual)
             
             # Exibir resultados
-            self.lbl_custo_total_valor.setText(f"R$ {calculos['custo_total']:,.2f}")
-            self.lbl_preco_estimado_valor.setText(f"R$ {calculos['preco_venda_estimado']:,.2f}")
-            self.lbl_lucro_credor_calc_valor.setText(f"R$ {calculos['lucro_credor']:,.2f}")
-            self.lbl_lucro_investidor_calc_valor.setText(f"R$ {calculos['lucro_investidor']:,.2f}")
-            self.lbl_preco_minimo_valor.setText(f"R$ {calculos['preco_minimo']:,.2f}")
+            self.lbl_custo_total_valor.setText(formatar_moeda(calculos['custo_total']))
+            self.lbl_preco_estimado_valor.setText(formatar_moeda(calculos['preco_venda_estimado']))
+            self.lbl_lucro_credor_calc_valor.setText(formatar_moeda(calculos['lucro_credor']))
+            self.lbl_lucro_investidor_calc_valor.setText(formatar_moeda(calculos['lucro_investidor']))
+            self.lbl_preco_minimo_valor.setText(formatar_moeda(calculos['preco_minimo']))
             
             # Exibir indicadores financeiros
             margem = calculos['margem']
-            self.lbl_margem_valor.setText(f"R$ {margem:,.2f}")
+            self.lbl_margem_valor.setText(formatar_moeda(margem))
             
             # Colorir margem baseada no valor
             if margem > 0:
@@ -562,12 +563,12 @@ class PainelCalculo(QWidget):
             
     def limpar_valores(self):
         """Limpa todos os valores exibidos"""
-        self.lbl_custo_total_valor.setText("R$ 0,00")
-        self.lbl_preco_estimado_valor.setText("R$ 0,00")
-        self.lbl_lucro_credor_calc_valor.setText("R$ 0,00")
-        self.lbl_lucro_investidor_calc_valor.setText("R$ 0,00")
-        self.lbl_preco_minimo_valor.setText("R$ 0,00")
-        self.lbl_margem_valor.setText("R$ 0,00")
+        self.lbl_custo_total_valor.setText("R$ 0")
+        self.lbl_preco_estimado_valor.setText("R$ 0")
+        self.lbl_lucro_credor_calc_valor.setText("R$ 0")
+        self.lbl_lucro_investidor_calc_valor.setText("R$ 0")
+        self.lbl_preco_minimo_valor.setText("R$ 0")
+        self.lbl_margem_valor.setText("R$ 0")
         self.lbl_roi_valor.setText("0,0%")
         self.lbl_payback_valor.setText("0 meses")
         
