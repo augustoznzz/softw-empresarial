@@ -222,29 +222,32 @@ class TabelaImoveis(QWidget):
         self.tabela.setSelectionMode(QTableWidget.SingleSelection)
         self.tabela.setSortingEnabled(True)
         
-        # Configurar altura mínima para mostrar pelo menos 5 linhas (aumentada em 15%)
-        self.tabela.setMinimumHeight(250)  # Altura mínima aumentada para acomodar células mais altas
-        self.tabela.verticalHeader().setDefaultSectionSize(50)  # Altura de cada linha aumentada para 50px
+        # Configurar altura mínima para mostrar pelo menos 5 linhas
+        self.tabela.setMinimumHeight(250)
+        self.tabela.verticalHeader().setDefaultSectionSize(50)
         
-        # Ajustar tamanhos das colunas
+        # Ajustar tamanhos das colunas - Aumentado em 5%
         header = self.tabela.horizontalHeader()
-        # header.setStretchLastSection(True)  # Removido para permitir largura fixa no ROI
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # CEP
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # Cidade
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Estado
-        header.setSectionResizeMode(3, QHeaderView.Fixed)  # Custo Total - largura fixa reduzida em 30%
-        header.setSectionResizeMode(4, QHeaderView.Fixed)  # Preço Estimado - largura fixa reduzida em 50%
-        header.setSectionResizeMode(5, QHeaderView.Fixed)  # Margem - largura fixa reduzida em 30%
-        header.setSectionResizeMode(6, QHeaderView.Fixed)  # ROI (%) com largura fixa
+        header.setSectionResizeMode(3, QHeaderView.Fixed)  # Custo Total
+        header.setSectionResizeMode(4, QHeaderView.Fixed)  # Preço Estimado
+        header.setSectionResizeMode(5, QHeaderView.Fixed)  # Margem
+        header.setSectionResizeMode(6, QHeaderView.Fixed)  # ROI (%)
         
-        # Definir larguras fixas para as colunas monetárias
-        header.resizeSection(3, 140)  # Custo Total: largura fixa de 140px
-        header.resizeSection(4, 150)  # Preço Estimado: largura fixa de 150px (redução de ~50%)
-        header.resizeSection(5, 120)  # Margem: largura fixa de 120px
-        header.resizeSection(6, 90)   # ROI: largura fixa de 90px
+        # Definir larguras fixas para as colunas monetárias (aumentadas em 5%)
+        header.resizeSection(3, 147)  # Custo Total: 140 + 5% = 147px
+        header.resizeSection(4, 158)  # Preço Estimado: 150 + 5% = 158px
+        header.resizeSection(5, 126)  # Margem: 120 + 5% = 126px
+        header.resizeSection(6, 95)   # ROI: 90 + 5% = 95px
         
         # Conectar sinais
         self.tabela.itemSelectionChanged.connect(self.on_selecao_alterada)
+        self.tabela.itemChanged.connect(self.on_item_changed)
+        
+        # Configurar células editáveis para valores financeiros
+        self.tabela.setEditTriggers(QTableWidget.DoubleClicked)
         
         layout.addWidget(self.tabela)
         
@@ -366,8 +369,8 @@ class TabelaImoveis(QWidget):
         """Verifica se um imóvel atende aos filtros aplicados"""
         # Busca por CEP
         if 'cep' in filtros and filtros['cep']:
-            cep_busca = filtros['cep'].replace('-', '').replace('.', '')  # Remove formatação
-            cep_imovel = imovel.cep.replace('-', '').replace('.', '')  # Remove formatação
+            cep_busca = filtros['cep'].replace('-', '').replace('.', '')
+            cep_imovel = imovel.cep.replace('-', '').replace('.', '')
             if cep_busca not in cep_imovel:
                 return False
         
@@ -385,12 +388,6 @@ class TabelaImoveis(QWidget):
         if 'estado' in filtros:
             if imovel.estado != filtros['estado']:
                 return False
-        
-        # Filtros de status e padrão removidos
-        
-        # Todos os filtros numéricos removidos
-        
-        # Filtros avançados removidos
         
         return True
         
@@ -420,6 +417,146 @@ class TabelaImoveis(QWidget):
             self.imovel_selecionado_atual = None
         self.atualizar_botoes()
         
+    def on_item_changed(self, item):
+        """Chamado quando um item da tabela é modificado"""
+        if not item:
+            return
+            
+        row = item.row()
+        column = item.column()
+        
+        # Verificar se é uma coluna editável
+        if column in [3, 4, 5]:  # Custo Total, Preço Estimado, Margem
+            try:
+                # Obter o texto digitado
+                texto = item.text().strip()
+                
+                # Remover formatação existente (R$, pontos, espaços)
+                texto_limpo = texto.replace('R$', '').replace('.', '').replace(' ', '')
+                
+                # Converter para número
+                if texto_limpo:
+                    valor = float(texto_limpo)
+                    
+                    # Atualizar o imóvel correspondente
+                    if row < len(self.imoveis_filtrados):
+                        imovel = self.imoveis_filtrados[row]
+                        
+                        # Aplicar cálculos automáticos baseado na coluna editada
+                        if column == 3:  # Custo Total
+                            self.calcular_com_custo_total(imovel, valor, row)
+                        elif column == 4:  # Preço Estimado
+                            self.calcular_com_preco_estimado(imovel, valor, row)
+                        elif column == 5:  # Margem
+                            self.calcular_com_margem(imovel, valor, row)
+                        
+            except ValueError:
+                # Se não conseguir converter, reverter para o valor anterior
+                self.atualizar_linha_calculos(row, self.imoveis_filtrados[row])
+                
+    def calcular_com_custo_total(self, imovel, novo_custo_total, row):
+        """Calcula automaticamente quando o custo total é alterado"""
+        try:
+            # Calcular proporção para distribuir o novo custo total
+            custo_atual = imovel.custo_aquisicao + imovel.custos_reforma + imovel.custos_transacao
+            
+            if custo_atual > 0:
+                proporcao = novo_custo_total / custo_atual
+                
+                # Atualizar custos proporcionalmente
+                novo_custo_aquisicao = imovel.custo_aquisicao * proporcao
+                novo_custo_reforma = imovel.custos_reforma * proporcao
+                novo_custo_transacao = imovel.custos_transacao * proporcao
+                
+                # Atualizar no banco
+                query = """
+                    UPDATE imoveis 
+                    SET custo_aquisicao = ?, custos_reforma = ?, custos_transacao = ?
+                    WHERE id = ?
+                """
+                self.db_manager.execute_query(query, (
+                    novo_custo_aquisicao, novo_custo_reforma, novo_custo_transacao, imovel.id
+                ))
+                
+                # Atualizar o objeto imóvel
+                imovel.custo_aquisicao = novo_custo_aquisicao
+                imovel.custos_reforma = novo_custo_reforma
+                imovel.custos_transacao = novo_custo_transacao
+                
+                # Recalcular e atualizar a linha
+                self.atualizar_linha_calculos(row, imovel)
+                
+        except Exception as e:
+            logging.error(f"Erro ao calcular com custo total: {e}")
+            
+    def calcular_com_preco_estimado(self, imovel, novo_preco_estimado, row):
+        """Calcula automaticamente quando o preço estimado é alterado"""
+        try:
+            # Atualizar o preço estimado no banco (se houver campo específico)
+            # Por enquanto, vamos recalcular baseado nos custos
+            self.atualizar_linha_calculos(row, imovel)
+            
+        except Exception as e:
+            logging.error(f"Erro ao calcular com preço estimado: {e}")
+            
+    def calcular_com_margem(self, imovel, nova_margem, row):
+        """Calcula automaticamente quando a margem é alterada"""
+        try:
+            # Calcular novo preço estimado baseado na margem desejada
+            custo_total = imovel.custo_aquisicao + imovel.custos_reforma + imovel.custos_transacao
+            novo_preco_estimado = custo_total + nova_margem
+            
+            # Calcular novo ROI
+            if custo_total > 0:
+                novo_roi = (nova_margem / custo_total) * 100
+            else:
+                novo_roi = 0
+                
+            # Atualizar a linha com os novos valores
+            self.atualizar_linha_calculos(row, imovel)
+            
+        except Exception as e:
+            logging.error(f"Erro ao calcular com margem: {e}")
+            
+    def atualizar_linha_calculos(self, row, imovel):
+        """Atualiza os cálculos de uma linha específica"""
+        try:
+            # Recalcular valores financeiros
+            calculos = self.calculo_service.calcular_tudo(imovel)
+            
+            # Atualizar Custo Total
+            custo_total = calculos['custo_total']
+            self.tabela.setItem(row, 3, QTableWidgetItem(formatar_moeda(custo_total)))
+            
+            # Atualizar Preço Estimado
+            preco_estimado = calculos['preco_venda_estimado']
+            self.tabela.setItem(row, 4, QTableWidgetItem(formatar_moeda(preco_estimado)))
+            
+            # Atualizar Margem
+            margem = calculos['margem']
+            margem_item = QTableWidgetItem(formatar_moeda(margem))
+            if margem > 0:
+                margem_item.setBackground(QColor(220, 255, 220))  # Verde claro
+            elif margem < 0:
+                margem_item.setBackground(QColor(255, 220, 220))  # Vermelho claro
+            else:
+                margem_item.setBackground(QColor(255, 255, 220))  # Amarelo claro
+            self.tabela.setItem(row, 5, margem_item)
+            
+            # Atualizar ROI
+            roi = calculos['roi']
+            roi_item = QTableWidgetItem(f"{roi:.1f}%")
+            if roi > 20:
+                roi_item.setBackground(QColor(220, 255, 220))  # Verde claro
+            elif roi < 0:
+                roi_item.setBackground(QColor(255, 220, 220))  # Vermelho claro
+            else:
+                roi_item.setBackground(QColor(255, 255, 220))  # Amarelo claro
+            self.tabela.setItem(row, 6, roi_item)
+            
+        except Exception as e:
+            logging.error(f"Erro ao atualizar cálculos da linha {row}: {e}")
+            
     def atualizar_botoes(self):
         """Atualiza o estado dos botões baseado na seleção"""
         tem_selecao = self.imovel_selecionado_atual is not None
@@ -569,3 +706,36 @@ class TabelaImoveis(QWidget):
         # Fechar o formulário se ele ainda existir
         if hasattr(self, 'form_dialog'):
             self.form_dialog.close()
+    
+    # Métodos públicos para compatibilidade
+    def carregar_imoveis(self):
+        """Método público para carregar imóveis"""
+        self._carregar_imoveis()
+    
+    def atualizar_tabela(self):
+        """Método público para atualizar a tabela"""
+        self._atualizar_tabela()
+    
+    def aplicar_filtros(self, filtros):
+        """Método público para aplicar filtros"""
+        self._aplicar_filtros(filtros)
+    
+    def novo_imovel(self):
+        """Método público para criar novo imóvel"""
+        self._novo_imovel()
+    
+    def editar_imovel(self):
+        """Método público para editar imóvel"""
+        self._editar_imovel()
+    
+    def excluir_imovel(self):
+        """Método público para excluir imóvel"""
+        self._excluir_imovel()
+    
+    def exportar_pdf(self):
+        """Método público para exportar PDF"""
+        self._exportar_pdf()
+    
+    def exportar_excel(self):
+        """Método público para exportar Excel"""
+        self._exportar_excel()

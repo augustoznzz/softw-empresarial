@@ -15,6 +15,8 @@ class CalculoService:
     def __init__(self):
         self.db_manager = DatabaseManager()
         self.parametros = ParametrosGlobais()
+        # Cache para fatores de localização
+        self._fatores_cache = {}
         
     def calcular_preco_venda_estimado(self, imovel: Imovel) -> float:
         """Calcula o preço de venda estimado do imóvel"""
@@ -41,6 +43,13 @@ class CalculoService:
             
     def get_fator_localizacao(self, cidade: str, cep: str = None) -> float:
         """Obtém o fator de localização para uma cidade/CEP"""
+        # Criar chave de cache
+        cache_key = f"{cidade}:{cep or 'default'}"
+        
+        # Verificar cache primeiro
+        if cache_key in self._fatores_cache:
+            return self._fatores_cache[cache_key]
+        
         try:
             if cep:
                 query = """
@@ -60,15 +69,21 @@ class CalculoService:
                 result = self.db_manager.execute_query(query, (cidade,))
                 
             if result:
-                return result[0][0]
+                fator = result[0][0]
+                # Armazenar no cache
+                self._fatores_cache[cache_key] = fator
+                return fator
             else:
-                # Retornar fator padrão se não encontrar
-                logging.warning(f"Fator de localização não encontrado para {cidade}/{cep}, usando 1.0")
-                return 1.0
+                # Retornar fator padrão se não encontrar (sem warning)
+                fator_padrao = 1.0
+                self._fatores_cache[cache_key] = fator_padrao
+                return fator_padrao
                 
         except Exception as e:
             logging.error(f"Erro ao obter fator de localização: {e}")
-            return 1.0
+            fator_padrao = 1.0
+            self._fatores_cache[cache_key] = fator_padrao
+            return fator_padrao
             
     def calcular_custos_totais(self, imovel: Imovel) -> Dict[str, float]:
         """Calcula todos os custos do imóvel"""
@@ -100,13 +115,13 @@ class CalculoService:
             'lucro_investidor': lucro_investidor
         }
         
-    def calcular_preco_minimo(self, custo_total: float, lucro_credor: float, lucro_investidor: float) -> float:
+    def calcular_preco_minimo(self, custo_total: float, lucro_credor: float) -> float:
         """Calcula o preço mínimo de venda"""
-        return custo_total + lucro_credor + lucro_investidor
+        return custo_total + lucro_credor
         
-    def calcular_margem(self, preco_estimado: float, preco_minimo: float) -> float:
+    def calcular_margem(self, preco_venda: float, custo_total: float) -> float:
         """Calcula a margem de lucro"""
-        return preco_estimado - preco_minimo
+        return preco_venda - custo_total
         
     def calcular_roi(self, margem: float, custo_total: float) -> float:
         """Calcula o ROI (Return on Investment)"""
@@ -114,125 +129,65 @@ class CalculoService:
             return (margem / custo_total) * 100
         return 0.0
         
-    def calcular_payback(self, margem: float, custo_total: float) -> Optional[float]:
-        """Calcula o tempo de payback em meses (estimativa)"""
-        if margem > 0 and custo_total > 0:
-            # Estimativa: payback = custo_total / margem_mensal
-            # Assumindo que a margem é anual, dividir por 12
-            margem_mensal = margem / 12
-            if margem_mensal > 0:
-                return custo_total / margem_mensal
-        return None
+    def calcular_payback(self, custo_total: float, margem_mensal: float) -> float:
+        """Calcula o tempo de payback em meses"""
+        if margem_mensal > 0:
+            return custo_total / margem_mensal
+        return float('inf')
         
     def calcular_tudo(self, imovel: Imovel) -> Dict[str, Any]:
-        """Calcula todos os valores para um imóvel"""
+        """Calcula todos os valores financeiros do imóvel"""
         try:
-            # Preço de venda estimado
+            # Calcular preço de venda estimado
             preco_venda_estimado = self.calcular_preco_venda_estimado(imovel)
             
-            # Custos totais
+            # Calcular custos totais
             custos = self.calcular_custos_totais(imovel)
+            custo_total = custos['custo_total']
             
-            # Lucros
-            lucros = self.calcular_lucros(imovel, custos['custo_total'])
+            # Calcular lucros
+            lucros = self.calcular_lucros(imovel, custo_total)
+            lucro_credor = lucros['lucro_credor']
+            lucro_investidor = lucros['lucro_investidor']
             
-            # Preço mínimo
-            preco_minimo = self.calcular_preco_minimo(
-                custos['custo_total'],
-                lucros['lucro_credor'],
-                lucros['lucro_investidor']
-            )
+            # Calcular preço mínimo
+            preco_minimo = self.calcular_preco_minimo(custo_total, lucro_credor)
             
-            # Margem
-            margem = self.calcular_margem(preco_venda_estimado, preco_minimo)
+            # Calcular margem
+            margem = self.calcular_margem(preco_venda_estimado, custo_total)
             
-            # ROI
-            roi = self.calcular_roi(margem, custos['custo_total'])
+            # Calcular ROI
+            roi = self.calcular_roi(margem, custo_total)
             
-            # Payback
-            payback = self.calcular_payback(margem, custos['custo_total'])
-            
-            # Fator de localização
-            fator_localizacao = self.get_fator_localizacao(imovel.cidade, imovel.cep)
-            
-            # Fator de padrão
-            fator_padrao = self.parametros.get_fator_padrao(imovel.padrao_acabamento)
+            # Calcular payback estimado (assumindo margem mensal como 1/12 da margem anual)
+            margem_mensal = margem / 12 if margem > 0 else 0
+            payback_meses = self.calcular_payback(custo_total, margem_mensal)
             
             return {
-                'preco_venda_estimado': round(preco_venda_estimado, 2),
-                'custo_total': round(custos['custo_total'], 2),
-                'lucro_credor': round(lucros['lucro_credor'], 2),
-                'lucro_investidor': round(lucros['lucro_investidor'], 2),
-                'preco_minimo': round(preco_minimo, 2),
-                'margem': round(margem, 2),
-                'roi': round(roi, 2),
-                'payback': round(payback, 2) if payback else None,
-                'fator_localizacao': fator_localizacao,
-                'fator_padrao': fator_padrao,
-                'percentual_credor': lucros['percentual_credor'],
-                'percentual_investidor': self.parametros.lucro_desejado_investidor,
-                'preco_base_m2': self.parametros.preco_base_m2
+                'preco_venda_estimado': preco_venda_estimado,
+                'custo_total': custo_total,
+                'lucro_credor': lucro_credor,
+                'lucro_investidor': lucro_investidor,
+                'preco_minimo': preco_minimo,
+                'margem': margem,
+                'roi': roi,
+                'payback_meses': payback_meses
             }
             
         except Exception as e:
             logging.error(f"Erro ao calcular valores do imóvel: {e}")
-            return {}
+            # Retornar valores padrão em caso de erro
+            return {
+                'preco_venda_estimado': 0.0,
+                'custo_total': 0.0,
+                'lucro_credor': 0.0,
+                'lucro_investidor': 0.0,
+                'preco_minimo': 0.0,
+                'margem': 0.0,
+                'roi': 0.0,
+                'payback_meses': 0.0
+            }
             
-    def simular_cenarios(self, imovel: Imovel, percentuais_credor: list, percentuais_investidor: list) -> Dict[str, Any]:
-        """Simula diferentes cenários de percentuais"""
-        cenarios = {}
-        
-        for perc_credor in percentuais_credor:
-            for perc_investidor in percentuais_investidor:
-                # Criar cópia do imóvel com percentual alterado
-                imovel_simulacao = Imovel(**imovel.to_dict())
-                imovel_simulacao.percentual_lucro_credor = perc_credor
-                
-                # Calcular com novos percentuais
-                resultado = self.calcular_tudo(imovel_simulacao)
-                
-                chave = f"credor_{perc_credor}_investidor_{perc_investidor}"
-                cenarios[chave] = {
-                    'percentual_credor': perc_credor,
-                    'percentual_investidor': perc_investidor,
-                    'margem': resultado.get('margem', 0),
-                    'roi': resultado.get('roi', 0),
-                    'preco_minimo': resultado.get('preco_minimo', 0)
-                }
-                
-        return cenarios
-        
-    def validar_viabilidade(self, imovel: Imovel) -> Dict[str, Any]:
-        """Valida a viabilidade do investimento"""
-        resultado = self.calcular_tudo(imovel)
-        
-        margem = resultado.get('margem', 0)
-        roi = resultado.get('roi', 0)
-        
-        # Critérios de viabilidade
-        viabilidade = {
-            'margem_positiva': margem > 0,
-            'roi_minimo': roi >= 10,  # ROI mínimo de 10%
-            'margem_minima': margem >= resultado.get('custo_total', 0) * 0.05,  # Margem mínima de 5%
-            'viabilidade_geral': False
-        }
-        
-        # Viabilidade geral
-        viabilidade['viabilidade_geral'] = (
-            viabilidade['margem_positiva'] and 
-            viabilidade['roi_minimo'] and 
-            viabilidade['margem_minima']
-        )
-        
-        # Recomendações
-        recomendacoes = []
-        if not viabilidade['margem_positiva']:
-            recomendacoes.append("Margem negativa - reavaliar preço ou custos")
-        if not viabilidade['roi_minimo']:
-            recomendacoes.append("ROI abaixo do mínimo recomendado")
-        if not viabilidade['margem_minima']:
-            recomendacoes.append("Margem muito baixa - risco alto")
-            
-        viabilidade['recomendacoes'] = recomendacoes
-        
-        return viabilidade
+    def limpar_cache(self):
+        """Limpa o cache de fatores de localização"""
+        self._fatores_cache.clear()

@@ -141,58 +141,6 @@ class PainelCalculo(QWidget):
         info_layout.addWidget(self.lbl_metragem, 2, 0, 1, 2)
         
         content_layout.addWidget(self.info_group)
-        
-        # Grupo de parâmetros ajustáveis
-        self.params_group = QGroupBox("⚙️ Parâmetros Ajustáveis")
-        params_layout = QGridLayout()
-        self.params_group.setLayout(params_layout)
-        
-        # Slider para percentual de lucro do credor
-        self.lbl_lucro_credor = QLabel("Percentual de Lucro do Credor:")
-        params_layout.addWidget(self.lbl_lucro_credor, 0, 0)
-        
-        self.lucro_credor_slider = QSlider(Qt.Horizontal)
-        self.lucro_credor_slider.setRange(8, 25)
-        self.lucro_credor_slider.setValue(15)
-        self.lucro_credor_slider.setTickPosition(QSlider.TicksBelow)
-        self.lucro_credor_slider.setTickInterval(1)
-        self.lucro_credor_slider.valueChanged.connect(self.on_parametros_changed)
-        params_layout.addWidget(self.lucro_credor_slider, 0, 1)
-        
-        self.lbl_lucro_credor_valor = QLabel("15%")
-        self.lbl_lucro_credor_valor.setStyleSheet("""
-            QLabel {
-                font-weight: bold;
-                color: #007bff;
-                min-width: 40px;
-            }
-        """)
-        params_layout.addWidget(self.lbl_lucro_credor_valor, 0, 2)
-        
-        # Slider para lucro desejado do investidor
-        self.lbl_lucro_investidor = QLabel("Lucro Desejado do Investidor:")
-        params_layout.addWidget(self.lbl_lucro_investidor, 1, 0)
-        
-        self.lucro_investidor_slider = QSlider(Qt.Horizontal)
-        self.lucro_investidor_slider.setRange(10, 25)
-        self.lucro_investidor_slider.setValue(15)
-        self.lucro_investidor_slider.setTickPosition(QSlider.TicksBelow)
-        self.lucro_investidor_slider.setTickInterval(1)
-        self.lucro_investidor_slider.valueChanged.connect(self.on_parametros_changed)
-        params_layout.addWidget(self.lucro_investidor_slider, 1, 1)
-        
-        self.lbl_lucro_investidor_valor = QLabel("15%")
-        self.lbl_lucro_investidor_valor.setStyleSheet("""
-            QLabel {
-                font-weight: bold;
-                color: #007bff;
-                min-width: 40px;
-            }
-        """)
-        params_layout.addWidget(self.lbl_lucro_investidor_valor, 1, 2)
-        
-        content_layout.addWidget(self.params_group)
-        
         # Grupo de resultados dos cálculos
         self.resultados_group = QGroupBox("📊 Resultados dos Cálculos")
         resultados_layout = QGridLayout()
@@ -244,8 +192,8 @@ class PainelCalculo(QWidget):
         """)
         resultados_layout.addWidget(self.lbl_preco_estimado_valor, 1, 1)
         
-        # Lucro do credor
-        self.lbl_lucro_credor_calc_titulo = QLabel("Lucro do Credor:")
+        # Lucro do dono do imóvel
+        self.lbl_lucro_credor_calc_titulo = QLabel("Lucro do Dono do Imóvel:")
         self.lbl_lucro_credor_calc_titulo.setStyleSheet("""
             QLabel {
                 font-weight: bold;
@@ -395,27 +343,17 @@ class PainelCalculo(QWidget):
         scroll_area.setWidget(content_widget)
         layout.addWidget(scroll_area)
         
-        # Conectar sliders aos labels de valor
-        self.lucro_credor_slider.valueChanged.connect(self.atualizar_label_lucro_credor)
-        self.lucro_investidor_slider.valueChanged.connect(self.atualizar_label_lucro_investidor)
+
         
-    def atualizar_label_lucro_credor(self, valor):
-        """Atualiza o label do valor do lucro do credor"""
-        self.lbl_lucro_credor_valor.setText(f"{valor}%")
-        self.on_parametros_changed()
+
         
-    def atualizar_label_lucro_investidor(self, valor):
-        """Atualiza o label do valor do lucro do investidor"""
-        self.lbl_lucro_investidor_valor.setText(f"{valor}%")
-        self.on_parametros_changed()
-        
-    def carregar_imovel(self, imovel):
+    def carregar_imovel(self, imovel: Imovel):
         """Carrega um imóvel para exibição e cálculo"""
         self.imovel_atual = imovel
-        self.atualizar_informacoes()
-        self.calcular_e_exibir()
+        self._atualizar_informacoes()
+        self._calcular_e_exibir()
         
-    def atualizar_informacoes(self):
+    def _atualizar_informacoes(self):
         """Atualiza as informações básicas do imóvel"""
         if self.imovel_atual:
             self.lbl_cep.setText(f"CEP: {self.imovel_atual.cep}")
@@ -426,17 +364,13 @@ class PainelCalculo(QWidget):
             self.lbl_cidade_estado.setText("Cidade/Estado: -")
             self.lbl_metragem.setText("Metragem: -")
             
-    def calcular_e_exibir(self):
+    def _calcular_e_exibir(self):
         """Calcula e exibe todos os valores"""
         if not self.imovel_atual:
-            self.limpar_valores()
+            self._limpar_valores()
             return
             
         try:
-            # Obter valores dos sliders
-            percentual_lucro_credor = self.lucro_credor_slider.value() / 100
-            lucro_desejado_investidor = self.lucro_investidor_slider.value() / 100
-            
             # Calcular valores
             calculos = self.calculo_service.calcular_tudo(self.imovel_atual)
             
@@ -452,116 +386,128 @@ class PainelCalculo(QWidget):
             self.lbl_margem_valor.setText(formatar_moeda(margem))
             
             # Colorir margem baseada no valor
-            if margem > 0:
-                self.lbl_margem_valor.setStyleSheet("""
-                    QLabel {
-                        font-size: 16px;
-                        font-weight: bold;
-                        color: #ffffff;
-                        background-color: #28a745;
-                        padding: 8px;
-                        border-radius: 6px;
-                        min-width: 120px;
-                    }
-                """)
-            elif margem < 0:
-                self.lbl_margem_valor.setStyleSheet("""
-                    QLabel {
-                        font-size: 16px;
-                        font-weight: bold;
-                        color: #ffffff;
-                        background-color: #dc3545;
-                        padding: 8px;
-                        border-radius: 6px;
-                        min-width: 120px;
-                    }
-                """)
-            else:
-                self.lbl_margem_valor.setStyleSheet("""
-                    QLabel {
-                        font-size: 16px;
-                        font-weight: bold;
-                        color: #ffffff;
-                        background-color: #ffc107;
-                        padding: 8px;
-                        border-radius: 6px;
-                        min-width: 120px;
-                    }
-                """)
+            self._aplicar_cor_margem(margem)
             
             roi = calculos['roi']
             self.lbl_roi_valor.setText(f"{roi:.1f}%")
             
             # Colorir ROI baseado no valor
-            if roi > 20:
-                self.lbl_roi_valor.setStyleSheet("""
-                    QLabel {
-                        font-size: 16px;
-                        font-weight: bold;
-                        color: #ffffff;
-                        background-color: #28a745;
-                        padding: 8px;
-                        border-radius: 6px;
-                        min-width: 120px;
-                    }
-                """)
-            elif roi > 10:
-                self.lbl_roi_valor.setStyleSheet("""
-                    QLabel {
-                        font-size: 16px;
-                        font-weight: bold;
-                        color: #ffffff;
-                        background-color: #ffc107;
-                        padding: 8px;
-                        border-radius: 6px;
-                        min-width: 120px;
-                    }
-                """)
-            elif roi > 0:
-                self.lbl_roi_valor.setStyleSheet("""
-                    QLabel {
-                        font-size: 16px;
-                        font-weight: bold;
-                        color: #ffffff;
-                        background-color: #fd7e14;
-                        padding: 8px;
-                        border-radius: 6px;
-                        min-width: 120px;
-                    }
-                """)
-            else:
-                self.lbl_roi_valor.setStyleSheet("""
-                    QLabel {
-                        font-size: 16px;
-                        font-weight: bold;
-                        color: #ffffff;
-                        background-color: #dc3545;
-                        padding: 8px;
-                        border-radius: 6px;
-                        min-width: 120px;
-                    }
-                """)
+            self._aplicar_cor_roi(roi)
             
             # Calcular payback estimado
-            if margem > 0:
-                payback_meses = int((calculos['custo_total'] / margem) * 12)
-                if payback_meses < 12:
-                    self.lbl_payback_valor.setText(f"{payback_meses} meses")
-                else:
-                    anos = payback_meses // 12
-                    meses = payback_meses % 12
-                    if meses == 0:
-                        self.lbl_payback_valor.setText(f"{anos} anos")
-                    else:
-                        self.lbl_payback_valor.setText(f"{anos} anos e {meses} meses")
-            else:
-                self.lbl_payback_valor.setText("N/A")
+            self._calcular_payback(calculos['custo_total'], margem)
                 
         except Exception as e:
             logging.error(f"Erro ao calcular valores: {e}")
-            self.limpar_valores()
+            self._limpar_valores()
             
-    def limpar_valores(self):
+    def _aplicar_cor_margem(self, margem: float):
+        """Aplica cor à margem baseada no valor"""
+        if margem > 0:
+            self.lbl_margem_valor.setStyleSheet("""
+                QLabel {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    background-color: #28a745;
+                    padding: 8px;
+                    border-radius: 6px;
+                    min-width: 120px;
+                }
+            """)
+        elif margem < 0:
+            self.lbl_margem_valor.setStyleSheet("""
+                QLabel {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    background-color: #dc3545;
+                    padding: 8px;
+                    border-radius: 6px;
+                    min-width: 120px;
+                }
+            """)
+        else:
+            self.lbl_margem_valor.setStyleSheet("""
+                QLabel {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    background-color: #ffc107;
+                    padding: 8px;
+                    border-radius: 6px;
+                    min-width: 120px;
+                }
+            """)
+            
+    def _aplicar_cor_roi(self, roi: float):
+        """Aplica cor ao ROI baseado no valor"""
+        if roi > 20:
+            self.lbl_roi_valor.setStyleSheet("""
+                QLabel {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    background-color: #28a745;
+                    padding: 8px;
+                    border-radius: 6px;
+                    min-width: 120px;
+                }
+            """)
+        elif roi > 10:
+            self.lbl_roi_valor.setStyleSheet("""
+                QLabel {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    background-color: #ffc107;
+                    padding: 8px;
+                    border-radius: 6px;
+                    min-width: 120px;
+                }
+            """)
+        elif roi > 0:
+            self.lbl_roi_valor.setStyleSheet("""
+                QLabel {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    background-color: #fd7e14;
+                    padding: 8px;
+                    border-radius: 6px;
+                    min-width: 120px;
+                }
+            """)
+        else:
+            self.lbl_roi_valor.setStyleSheet("""
+                QLabel {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    background-color: #dc3545;
+                    padding: 8px;
+                    border-radius: 6px;
+                    min-width: 120px;
+                }
+            """)
+            
+    def _calcular_payback(self, custo_total: float, margem: float):
+        """Calcula e exibe o payback estimado"""
+        if margem > 0:
+            payback_meses = int((custo_total / margem) * 12)
+            if payback_meses < 12:
+                self.lbl_payback_valor.setText(f"{payback_meses} meses")
+            else:
+                anos = payback_meses // 12
+                meses = payback_meses % 12
+                if meses == 0:
+                    self.lbl_payback_valor.setText(f"{anos} anos")
+                else:
+                    self.lbl_payback_valor.setText(f"{anos} anos e {meses} meses")
+        else:
+            self.lbl_payback_valor.setText("N/A")
+            
+    def _limpar_valores(self):
         """Limpa todos os valores exibidos"""
         self.lbl_custo_total_valor.setText("R$ 0")
         self.lbl_preco_estimado_valor.setText("R$ 0")
@@ -573,6 +519,10 @@ class PainelCalculo(QWidget):
         self.lbl_payback_valor.setText("0 meses")
         
         # Resetar cores
+        self._resetar_cores()
+        
+    def _resetar_cores(self):
+        """Reseta as cores dos indicadores para o padrão"""
         self.lbl_margem_valor.setStyleSheet("""
             QLabel {
                 font-size: 16px;
@@ -595,7 +545,4 @@ class PainelCalculo(QWidget):
             }
         """)
         
-    def on_parametros_changed(self):
-        """Chamado quando os parâmetros são alterados"""
-        if self.imovel_atual:
-            self.calcular_e_exibir()
+
