@@ -232,11 +232,16 @@ class TabelaImoveis(QWidget):
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # CEP
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # Cidade
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Estado
-        header.setSectionResizeMode(3, QHeaderView.Stretch)  # Custo Total - se expande
-        header.setSectionResizeMode(4, QHeaderView.Stretch)  # Preço Estimado - se expande
-        header.setSectionResizeMode(5, QHeaderView.Stretch)  # Margem - se expande
+        header.setSectionResizeMode(3, QHeaderView.Fixed)  # Custo Total - largura fixa reduzida em 30%
+        header.setSectionResizeMode(4, QHeaderView.Fixed)  # Preço Estimado - largura fixa reduzida em 50%
+        header.setSectionResizeMode(5, QHeaderView.Fixed)  # Margem - largura fixa reduzida em 30%
         header.setSectionResizeMode(6, QHeaderView.Fixed)  # ROI (%) com largura fixa
-        header.resizeSection(6, 90) # Largura fixa de 90px para a coluna ROI (redução de ~70% de um tamanho esticado)
+        
+        # Definir larguras fixas para as colunas monetárias
+        header.resizeSection(3, 140)  # Custo Total: largura fixa de 140px
+        header.resizeSection(4, 150)  # Preço Estimado: largura fixa de 150px (redução de ~50%)
+        header.resizeSection(5, 120)  # Margem: largura fixa de 120px
+        header.resizeSection(6, 90)   # ROI: largura fixa de 90px
         
         # Conectar sinais
         self.tabela.itemSelectionChanged.connect(self.on_selecao_alterada)
