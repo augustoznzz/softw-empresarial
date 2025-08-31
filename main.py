@@ -27,7 +27,7 @@ class MainWindow(QMainWindow):
     def setup_ui(self):
         """Configura a interface principal da aplicação"""
         self.setWindowTitle("🏠 Sistema de Negociação de Imóveis - Santa Catarina")
-        self.setMinimumSize(1400, 900)
+        self.setMinimumSize(1600, 900)  # Aumentado para acomodar melhor o novo layout
         
         # Configurar estilo moderno para a janela principal
         self.setStyleSheet("""
@@ -93,7 +93,8 @@ class MainWindow(QMainWindow):
         
         # Adicionar painel direito ao splitter
         main_splitter.addWidget(right_panel)
-        main_splitter.setSizes([450, 1200])  # Ajustar proporção - mais espaço para tabela
+        # Ajustar proporção: barra lateral 10% mais à direita, tabela com mais espaço
+        main_splitter.setSizes([495, 1405])  # 450 + (450 * 0.1) = 495, resto para tabela
         
         # Adicionar splitter ao layout principal
         main_layout.addWidget(main_splitter, 1)

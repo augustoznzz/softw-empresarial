@@ -198,9 +198,9 @@ class ExportService:
             header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
             header_alignment = Alignment(horizontal="center", vertical="center")
             
-            # Cabeçalhos - Removido endereço, reorganizada ordem
+            # Cabeçalhos - Removido ID e endereço, reorganizada ordem
             headers = [
-                'ID', 'CEP', 'Cidade', 'Estado', 'Metragem', 'Quartos', 'Banheiros',
+                'CEP', 'Cidade', 'Estado', 'Metragem', 'Quartos', 'Banheiros',
                 'Ano', 'Padrão', 'Custo Aquisição', 'Custos Reforma', 'Custos Transação',
                 'Custo Total', 'Preço Estimado', 'Margem', 'ROI (%)', 'Status'
             ]
@@ -219,35 +219,34 @@ class ExportService:
                 margem = preco_estimado - custo_total
                 roi = (margem / custo_total * 100) if custo_total > 0 else 0
                 
-                # Preencher linha - Removido endereço, reorganizadas colunas
-                ws.cell(row=row, column=1, value=imovel.id)
-                ws.cell(row=row, column=2, value=imovel.cep)  # CEP movido para coluna 2
-                ws.cell(row=row, column=3, value=imovel.cidade)
-                ws.cell(row=row, column=4, value=imovel.estado)
-                ws.cell(row=row, column=5, value=imovel.metragem)  # Corrigido índice após remoção do endereço
-                ws.cell(row=row, column=6, value=imovel.quartos)
-                ws.cell(row=row, column=7, value=imovel.banheiros)
-                ws.cell(row=row, column=8, value=imovel.ano)
-                ws.cell(row=row, column=9, value=imovel.padrao_acabamento)
-                ws.cell(row=row, column=10, value=imovel.custo_aquisicao)
-                ws.cell(row=row, column=11, value=imovel.custos_reforma)
-                ws.cell(row=row, column=12, value=imovel.custos_transacao)
-                ws.cell(row=row, column=13, value=custo_total)
-                ws.cell(row=row, column=14, value=preco_estimado)
-                ws.cell(row=row, column=15, value=margem)
-                ws.cell(row=row, column=16, value=roi)
-                ws.cell(row=row, column=17, value=imovel.status)  # Corrigido índice da coluna status
+                # Preencher linha - Removido ID e endereço, reorganizadas colunas
+                ws.cell(row=row, column=1, value=imovel.cep)  # CEP agora na coluna 1
+                ws.cell(row=row, column=2, value=imovel.cidade)  # Cidade agora na coluna 2
+                ws.cell(row=row, column=3, value=imovel.estado)  # Estado agora na coluna 3
+                ws.cell(row=row, column=4, value=imovel.metragem)  # Metragem agora na coluna 4
+                ws.cell(row=row, column=5, value=imovel.quartos)  # Quartos agora na coluna 5
+                ws.cell(row=row, column=6, value=imovel.banheiros)  # Banheiros agora na coluna 6
+                ws.cell(row=row, column=7, value=imovel.ano)  # Ano agora na coluna 7
+                ws.cell(row=row, column=8, value=imovel.padrao_acabamento)  # Padrão agora na coluna 8
+                ws.cell(row=row, column=9, value=imovel.custo_aquisicao)  # Custo Aquisição agora na coluna 9
+                ws.cell(row=row, column=10, value=imovel.custos_reforma)  # Custos Reforma agora na coluna 10
+                ws.cell(row=row, column=11, value=imovel.custos_transacao)  # Custos Transação agora na coluna 11
+                ws.cell(row=row, column=12, value=custo_total)  # Custo Total agora na coluna 12
+                ws.cell(row=row, column=13, value=preco_estimado)  # Preço Estimado agora na coluna 13
+                ws.cell(row=row, column=14, value=margem)  # Margem agora na coluna 14
+                ws.cell(row=row, column=15, value=roi)  # ROI agora na coluna 15
+                ws.cell(row=row, column=16, value=imovel.status)  # Status agora na coluna 16
                 
-                # Formatar valores monetários - Índices corrigidos após remoção do endereço
-                for col in [10, 11, 12, 13, 14, 15]:
+                # Formatar valores monetários - Índices corrigidos após remoção do ID e endereço
+                for col in [9, 10, 11, 12, 13, 14]:
                     cell = ws.cell(row=row, column=col)
                     cell.number_format = 'R$ #.##0'  # Formato brasileiro: pontos como separador de milhares, sem centavos
                     
                 # Formatar ROI - Corrigido índice
-                ws.cell(row=row, column=16).number_format = '0.0%'
+                ws.cell(row=row, column=15).number_format = '0.0%'
                 
                 # Formatar metragem - Corrigido índice
-                ws.cell(row=row, column=5).number_format = '0.0'
+                ws.cell(row=row, column=4).number_format = '0.0'
                 
             # Ajustar largura das colunas
             for column in ws.columns:

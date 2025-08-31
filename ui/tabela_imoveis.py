@@ -178,7 +178,7 @@ class TabelaImoveis(QWidget):
                 font-size: 11px;
             }
             QTableWidget::item {
-                padding: 8px;
+                padding: 12px 8px;
                 border-bottom: 1px solid #f1f3f4;
             }
             QTableWidget::item:selected {
@@ -196,7 +196,7 @@ class TabelaImoveis(QWidget):
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
                     stop:0 #f8f9fa, stop:1 #e9ecef);
                 color: #495057;
-                padding: 12px 8px;
+                padding: 16px 8px;
                 border: none;
                 border-bottom: 2px solid #dee2e6;
                 font-weight: bold;
@@ -208,9 +208,9 @@ class TabelaImoveis(QWidget):
             }
         """)
         
-        # Configurar cabeçalhos - Removido endereço, mantido apenas CEP
+        # Configurar cabeçalhos - Removido ID e endereço, mantido apenas CEP
         headers = [
-            "ID", "CEP", "Cidade", "Estado", 
+            "CEP", "Cidade", "Estado", 
             "Custo Total (R$)", "Preço Estimado (R$)", "Margem (R$)", "ROI (%)"
         ]
         self.tabela.setColumnCount(len(headers))
@@ -223,23 +223,20 @@ class TabelaImoveis(QWidget):
         self.tabela.setSortingEnabled(True)
         
         # Configurar altura mínima para mostrar pelo menos 5 linhas (aumentada em 15%)
-        self.tabela.setMinimumHeight(230)  # Altura mínima aumentada de 200 para 230 (15% a mais)
-        self.tabela.verticalHeader().setDefaultSectionSize(35)  # Altura de cada linha
+        self.tabela.setMinimumHeight(250)  # Altura mínima aumentada para acomodar células mais altas
+        self.tabela.verticalHeader().setDefaultSectionSize(50)  # Altura de cada linha aumentada para 50px
         
         # Ajustar tamanhos das colunas
         header = self.tabela.horizontalHeader()
-        header.setStretchLastSection(True)  # Última coluna (ROI) se expande
-        # Definir largura específica para a coluna ID (15% maior)
-        header.setSectionResizeMode(0, QHeaderView.Fixed)  # ID com largura fixa
-        header.resizeSection(0, 70)  # Largura fixa de 70px para a coluna ID
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # Endereço
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Cidade
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Estado
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # CEP
-        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # Custo Total
-        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)  # Preço Estimado
-        header.setSectionResizeMode(7, QHeaderView.ResizeToContents)  # Margem
-        header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # ROI
+        # header.setStretchLastSection(True)  # Removido para permitir largura fixa no ROI
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # CEP
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)  # Cidade
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Estado
+        header.setSectionResizeMode(3, QHeaderView.Stretch)  # Custo Total - se expande
+        header.setSectionResizeMode(4, QHeaderView.Stretch)  # Preço Estimado - se expande
+        header.setSectionResizeMode(5, QHeaderView.Stretch)  # Margem - se expande
+        header.setSectionResizeMode(6, QHeaderView.Fixed)  # ROI (%) com largura fixa
+        header.resizeSection(6, 90) # Largura fixa de 90px para a coluna ROI (redução de ~70% de um tamanho esticado)
         
         # Conectar sinais
         self.tabela.itemSelectionChanged.connect(self.on_selecao_alterada)
@@ -310,33 +307,24 @@ class TabelaImoveis(QWidget):
             # Calcular valores financeiros
             calculos = self.calculo_service.calcular_tudo(imovel)
             
-            # ID - centralizado e com fonte maior
-            id_item = QTableWidgetItem(str(imovel.id))
-            id_item.setTextAlignment(Qt.AlignCenter)  # Centralizar o texto
-            font = QFont()
-            font.setBold(True)
-            font.setPointSize(11)  # Aumentar fonte ligeiramente
-            id_item.setFont(font)
-            self.tabela.setItem(row, 0, id_item)
+            # CEP (agora na posição 0)
+            self.tabela.setItem(row, 0, QTableWidgetItem(imovel.cep))
             
-            # CEP (movido para posição 1, removendo endereço)
-            self.tabela.setItem(row, 1, QTableWidgetItem(imovel.cep))
+            # Cidade (agora na posição 1)
+            self.tabela.setItem(row, 1, QTableWidgetItem(imovel.cidade))
             
-            # Cidade
-            self.tabela.setItem(row, 2, QTableWidgetItem(imovel.cidade))
+            # Estado (agora na posição 2)
+            self.tabela.setItem(row, 2, QTableWidgetItem(imovel.estado))
             
-            # Estado
-            self.tabela.setItem(row, 3, QTableWidgetItem(imovel.estado))
-            
-            # Custo Total (índice corrigido após remoção do endereço)
+            # Custo Total (agora na posição 3)
             custo_total = calculos['custo_total']
-            self.tabela.setItem(row, 4, QTableWidgetItem(formatar_moeda(custo_total)))
+            self.tabela.setItem(row, 3, QTableWidgetItem(formatar_moeda(custo_total)))
             
-            # Preço Estimado
+            # Preço Estimado (agora na posição 4)
             preco_estimado = calculos['preco_venda_estimado']
-            self.tabela.setItem(row, 5, QTableWidgetItem(formatar_moeda(preco_estimado)))
+            self.tabela.setItem(row, 4, QTableWidgetItem(formatar_moeda(preco_estimado)))
             
-            # Margem
+            # Margem (agora na posição 5)
             margem = calculos['margem']
             margem_item = QTableWidgetItem(formatar_moeda(margem))
             if margem > 0:
@@ -345,9 +333,9 @@ class TabelaImoveis(QWidget):
                 margem_item.setBackground(QColor(255, 220, 220))  # Vermelho claro
             else:
                 margem_item.setBackground(QColor(255, 255, 220))  # Amarelo claro
-            self.tabela.setItem(row, 6, margem_item)
+            self.tabela.setItem(row, 5, margem_item)
             
-            # ROI
+            # ROI (agora na posição 6)
             roi = calculos['roi']
             roi_item = QTableWidgetItem(f"{roi:.1f}%")
             if roi > 20:
@@ -356,7 +344,7 @@ class TabelaImoveis(QWidget):
                 roi_item.setBackground(QColor(255, 220, 220))  # Vermelho claro
             else:
                 roi_item.setBackground(QColor(255, 255, 220))  # Amarelo claro
-            self.tabela.setItem(row, 7, roi_item)
+            self.tabela.setItem(row, 6, roi_item)
             
     def aplicar_filtros(self, filtros):
         """Aplica filtros à lista de imóveis"""
