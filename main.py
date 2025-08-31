@@ -74,26 +74,26 @@ class MainWindow(QMainWindow):
         self.filtros_widget = FiltrosWidget()
         left_layout.addWidget(self.filtros_widget)
         
+        # Painel de cálculos abaixo dos filtros
+        self.painel_calculo = PainelCalculo()
+        left_layout.addWidget(self.painel_calculo)
+        
         # Adicionar painel esquerdo ao splitter
         main_splitter.addWidget(left_panel)
-        main_splitter.setSizes([400, 1000])  # Largura inicial dos painéis
         
-        # Painel direito (tabela e cálculos)
+        # Painel direito (apenas a tabela de imóveis com tamanho vertical aumentado)
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(15)
         
-        # Tabela de imóveis
+        # Tabela de imóveis (ocupa todo o espaço vertical)
         self.tabela_imoveis = TabelaImoveis()
         right_layout.addWidget(self.tabela_imoveis)
         
-        # Painel de cálculos
-        self.painel_calculo = PainelCalculo()
-        right_layout.addWidget(self.painel_calculo)
-        
         # Adicionar painel direito ao splitter
         main_splitter.addWidget(right_panel)
+        main_splitter.setSizes([450, 1200])  # Ajustar proporção - mais espaço para tabela
         
         # Adicionar splitter ao layout principal
         main_layout.addWidget(main_splitter, 1)

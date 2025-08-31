@@ -204,9 +204,8 @@ class TabelaImoveis(QWidget):
         
         # Configurar cabeçalhos
         headers = [
-            "ID", "Endereço", "Cidade", "Estado", "CEP", "Metragem (m²)", 
-            "Quartos", "Banheiros", "Ano", "Padrão", "Custo Total (R$)", 
-            "Preço Estimado (R$)", "Margem (R$)", "ROI (%)", "Status"
+            "ID", "Endereço", "Cidade", "Estado", "CEP", 
+            "Custo Total (R$)", "Preço Estimado (R$)", "Margem (R$)", "ROI (%)"
         ]
         self.tabela.setColumnCount(len(headers))
         self.tabela.setHorizontalHeaderLabels(headers)
@@ -229,16 +228,10 @@ class TabelaImoveis(QWidget):
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Cidade
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)  # Estado
         header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # CEP
-        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # Metragem
-        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)  # Quartos
-        header.setSectionResizeMode(7, QHeaderView.ResizeToContents)  # Banheiros
-        header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # Ano
-        header.setSectionResizeMode(9, QHeaderView.ResizeToContents)  # Padrão
-        header.setSectionResizeMode(10, QHeaderView.ResizeToContents)  # Custo Total
-        header.setSectionResizeMode(11, QHeaderView.ResizeToContents)  # Preço Estimado
-        header.setSectionResizeMode(12, QHeaderView.ResizeToContents)  # Margem
-        header.setSectionResizeMode(13, QHeaderView.ResizeToContents)  # ROI
-        header.setSectionResizeMode(14, QHeaderView.ResizeToContents)  # Status
+        header.setSectionResizeMode(5, QHeaderView.ResizeToContents)  # Custo Total
+        header.setSectionResizeMode(6, QHeaderView.ResizeToContents)  # Preço Estimado
+        header.setSectionResizeMode(7, QHeaderView.ResizeToContents)  # Margem
+        header.setSectionResizeMode(8, QHeaderView.ResizeToContents)  # ROI
         
         # Conectar sinais
         self.tabela.itemSelectionChanged.connect(self.on_selecao_alterada)
@@ -262,9 +255,8 @@ class TabelaImoveis(QWidget):
         """Carrega todos os imóveis do banco"""
         try:
             query = """
-                SELECT id, endereco, cidade, estado, cep, metragem, quartos, 
-                       banheiros, ano, padrao_acabamento, custo_aquisicao, 
-                       custos_reforma, custos_transacao, status
+                SELECT id, endereco, cidade, estado, cep, metragem, 
+                       custo_aquisicao, custos_reforma, custos_transacao
                 FROM imoveis 
                 ORDER BY cidade, endereco
             """
@@ -274,9 +266,9 @@ class TabelaImoveis(QWidget):
             for row in results:
                 imovel = Imovel(
                     id=row[0], endereco=row[1], cidade=row[2], estado=row[3],
-                    cep=row[4], metragem=row[5], quartos=row[6], banheiros=row[7],
-                    ano=row[8], padrao_acabamento=row[9], custo_aquisicao=row[10],
-                    custos_reforma=row[11], custos_transacao=row[12], status=row[13]
+                    cep=row[4], metragem=row[5], quartos=0, banheiros=0,
+                    ano=2020, padrao_acabamento="medio", custo_aquisicao=row[6],
+                    custos_reforma=row[7], custos_transacao=row[8], status="em_analise"
                 )
                 self.imoveis.append(imovel)
             
@@ -311,28 +303,13 @@ class TabelaImoveis(QWidget):
             # CEP
             self.tabela.setItem(row, 4, QTableWidgetItem(imovel.cep))
             
-            # Metragem
-            self.tabela.setItem(row, 5, QTableWidgetItem(f"{imovel.metragem:.1f}"))
-            
-            # Quartos
-            self.tabela.setItem(row, 6, QTableWidgetItem(str(imovel.quartos)))
-            
-            # Banheiros
-            self.tabela.setItem(row, 7, QTableWidgetItem(str(imovel.banheiros)))
-            
-            # Ano
-            self.tabela.setItem(row, 8, QTableWidgetItem(str(imovel.ano)))
-            
-            # Padrão
-            self.tabela.setItem(row, 9, QTableWidgetItem(imovel.padrao_acabamento))
-            
             # Custo Total
             custo_total = calculos['custo_total']
-            self.tabela.setItem(row, 10, QTableWidgetItem(f"R$ {custo_total:,.2f}"))
+            self.tabela.setItem(row, 5, QTableWidgetItem(f"R$ {custo_total:,.2f}"))
             
             # Preço Estimado
             preco_estimado = calculos['preco_venda_estimado']
-            self.tabela.setItem(row, 11, QTableWidgetItem(f"R$ {preco_estimado:,.2f}"))
+            self.tabela.setItem(row, 6, QTableWidgetItem(f"R$ {preco_estimado:,.2f}"))
             
             # Margem
             margem = calculos['margem']
@@ -343,7 +320,7 @@ class TabelaImoveis(QWidget):
                 margem_item.setBackground(QColor(255, 220, 220))  # Vermelho claro
             else:
                 margem_item.setBackground(QColor(255, 255, 220))  # Amarelo claro
-            self.tabela.setItem(row, 12, margem_item)
+            self.tabela.setItem(row, 7, margem_item)
             
             # ROI
             roi = calculos['roi']
@@ -354,17 +331,7 @@ class TabelaImoveis(QWidget):
                 roi_item.setBackground(QColor(255, 220, 220))  # Vermelho claro
             else:
                 roi_item.setBackground(QColor(255, 255, 220))  # Amarelo claro
-            self.tabela.setItem(row, 13, roi_item)
-            
-            # Status
-            status_item = QTableWidgetItem(imovel.status)
-            if imovel.status == "Vendido":
-                status_item.setBackground(QColor(220, 255, 220))  # Verde claro
-            elif imovel.status == "Comprado":
-                status_item.setBackground(QColor(255, 255, 220))  # Amarelo claro
-            else:
-                status_item.setBackground(QColor(220, 220, 255))  # Azul claro
-            self.tabela.setItem(row, 14, status_item)
+            self.tabela.setItem(row, 8, roi_item)
             
     def aplicar_filtros(self, filtros):
         """Aplica filtros à lista de imóveis"""
@@ -379,11 +346,11 @@ class TabelaImoveis(QWidget):
         
     def imovel_atende_filtros(self, imovel, filtros):
         """Verifica se um imóvel atende aos filtros aplicados"""
-        # Busca por texto
-        if 'busca' in filtros and filtros['busca']:
-            busca = filtros['busca'].lower()
-            if (busca not in imovel.endereco.lower() and 
-                busca not in imovel.cidade.lower()):
+        # Busca por CEP
+        if 'cep' in filtros and filtros['cep']:
+            cep_busca = filtros['cep'].replace('-', '').replace('.', '')  # Remove formatação
+            cep_imovel = imovel.cep.replace('-', '').replace('.', '')  # Remove formatação
+            if cep_busca not in cep_imovel:
                 return False
         
         # Filtro por região
@@ -401,67 +368,11 @@ class TabelaImoveis(QWidget):
             if imovel.estado != filtros['estado']:
                 return False
         
-        # Filtro por status
-        if 'status' in filtros and filtros['status'] != "Todos os status":
-            if imovel.status != filtros['status']:
-                return False
+        # Filtros de status e padrão removidos
         
-        # Filtro por padrão
-        if 'padrao' in filtros and filtros['padrao'] != "Todos os padrões":
-            if imovel.padrao_acabamento != filtros['padrao']:
-                return False
+        # Todos os filtros numéricos removidos
         
-        # Filtro por metragem
-        if 'metragem_min' in filtros and filtros['metragem_min'] > 0:
-            if imovel.metragem < filtros['metragem_min']:
-                return False
-        if 'metragem_max' in filtros and filtros['metragem_max'] > 0:
-            if imovel.metragem > filtros['metragem_max']:
-                return False
-        
-        # Filtro por custo
-        if 'custo_min' in filtros and filtros['custo_min'] > 0:
-            custo_total = imovel.custo_aquisicao + imovel.custos_reforma + imovel.custos_transacao
-            if custo_total < filtros['custo_min']:
-                return False
-        if 'custo_max' in filtros and filtros['custo_max'] > 0:
-            custo_total = imovel.custo_aquisicao + imovel.custos_reforma + imovel.custos_transacao
-            if custo_total > filtros['custo_max']:
-                return False
-        
-        # Filtro por ROI
-        if 'roi_min' in filtros and filtros['roi_min'] > 0:
-            calculos = self.calculo_service.calcular_tudo(imovel)
-            if calculos['roi'] < filtros['roi_min']:
-                return False
-        
-        # Filtro por margem
-        if 'margem_min' in filtros and filtros['margem_min'] > 0:
-            calculos = self.calculo_service.calcular_tudo(imovel)
-            if calculos['margem'] < filtros['margem_min']:
-                return False
-        
-        # Filtros avançados
-        if 'quartos_min' in filtros and filtros['quartos_min'] > 0:
-            if imovel.quartos < filtros['quartos_min']:
-                return False
-        if 'quartos_max' in filtros and filtros['quartos_max'] > 0:
-            if imovel.quartos > filtros['quartos_max']:
-                return False
-        
-        if 'banheiros_min' in filtros and filtros['banheiros_min'] > 0:
-            if imovel.banheiros < filtros['banheiros_min']:
-                return False
-        if 'banheiros_max' in filtros and filtros['banheiros_max'] > 0:
-            if imovel.banheiros > filtros['banheiros_max']:
-                return False
-        
-        if 'ano_min' in filtros and filtros['ano_min'] > 1900:
-            if imovel.ano < filtros['ano_min']:
-                return False
-        if 'ano_max' in filtros and filtros['ano_max'] < 2030:
-            if imovel.ano > filtros['ano_max']:
-                return False
+        # Filtros avançados removidos
         
         return True
         
